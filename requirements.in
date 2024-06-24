@@ -1,0 +1,12 @@
+# Setup
+pip-tools
+# Dev
+autopep8
+flake8
+mypy
+# Production
+checkm-genome
+biopython
+# Test
+pytest
+pytest-mock
