@@ -66,10 +66,12 @@ os.makedirs(f"{_bn(caminho1)}/{_bn(sample)}", exist_ok=True)
 
 caminho_abricate = sys.argv[2]
 
-# Caminho para o output onde esta a tabela que sera colocado os resultados
+# Caminho para o output onde esta a tabela que sera colocado os resultados 
+#MELISE: ISSO É USADO AGORA PARA SALVAR OS DADOS PARA O MONGODB, CERTO?
 caminho_output = sys.argv[3]
 
 # entrar com o caminho da pastar onde esta instalado o kmer-db  /home/melise/kmer-db
+#MELISE: NAO USAMOS MAIS O KMER-DB
 kmerdb_install = sys.argv[4]
 
 # entrar com o caminho da pastar onde esta instalado o mlst. ex: /home/melise/identificar_clones
@@ -87,6 +89,7 @@ kraken2_install = sys.argv[8]
 # entrar com o caminho do unicycler
 unicycler = sys.argv[9]
 
+#MELISE: PODE APAGAR
 # criar um diretorio para unicycler
 # my @unicycler_dir = ("mkdir","$caminho1/$sample/unicycler");
 # system(@unicycler_dir) == 0
@@ -139,23 +142,14 @@ imprimir = None
 # PARA IMPRIMIR O RESULTADO EM UM ARQUIVO TXT PARA GAL
 
 gal_file = open('resultado_gal.txt', mode="a", encoding='utf-8')
+#MELISE: ESTA USANDO ESSE ARQUIVO PARA O MONGODB? PORQUE O PIPELINE NAO PRECISA DELE
 
 # printar no arquivo final o nome da amostra na primeira linha
 gal_file.write(
     f"\nAmostra {_bn(sample)}\nResultados relevantes do sequenciamento do genoma total (WGS):\n")
 
-####################################################################################
-# SILENCIADO NO PIPELINE OUTPUT
-
-# my $output = "$caminho_output/$sample.xlsx";
-# open (OUT2, ">> $output") or die "Nao foi possivel abrir output\n";
-
-# printar no arquivo final o nome da amostra na primeira coluna
-# print OUT2 "$sample\t";
 
 #####################################################################################
-# SE NAO QUISER CHECKM
-
 # Rodar o CheckM para saber qualidade da corrida
 # Copiar o arquivo assembly.fasta para a pasta do CheckM checkM_bins
 os.makedirs("checkM_bins", exist_ok=True)
@@ -173,11 +167,11 @@ sp_runner(checkM_qa)
 # apagar arquivos gerados, deixando apenas resultados
 shutil.rmtree('checkM_bins/bins', ignore_errors=True)
 shutil.rmtree('checkM_bins/storage', ignore_errors=True)
+#MELIE: NAO ENTENDI PORQUE AQUI NÃO REMOVER OS ARQUIVOS 
 pathlib.Path('checkM_bins/assembly.fasta').unlink(missing_ok=True)
 pathlib.Path('checkM_bins/lineage.ms').unlink(missing_ok=True)
 pathlib.Path('checkM_bins/checkm.log').unlink(missing_ok=True)
 
-# Ler o arquivo do resultado e imprimir o que interessa na tabela
 # pegar o resultado da contaminacao
 
 contaminacao = 0
@@ -197,9 +191,9 @@ with open(f"checkM_bins/{_bn(sample)}_resultados") as IN_check:
         # printar na tabela OUTPUT as informacoes de qualidade que interessam EXCLUSIVO TABELA OUTPUT
         # print OUT2 "$lines[5]\t$lines[6]\t$lines[8]\t";
         genome_size = lines[8]
-        mongo_saver.save('checkm_1', lines[5])
-        mongo_saver.save('checkm_2', lines[6])
-        mongo_saver.save('checkm_3', lines[8])
+        mongo_saver.save('checkm_1', lines[5]) #completeness
+        mongo_saver.save('checkm_2', lines[6]) #contamination
+        mongo_saver.save('checkm_3', lines[8]) #genome size
         mongo_saver.save('checkm_4', lines[11])  # contigs
         contaminacao = lines[6]
 
@@ -240,7 +234,7 @@ identificar_especie = ''  # mod 11.05.22
 genero = ''  # mod 11.05.22
 especie = ''  # mod 11.05.22
 # juntar genero e especie para mlst
-# resultado_final_especie = ''  # mod 11.05.22
+# resultado_final_especie = ''  # mod 11.05.22 MELISE: ESSA LINHA NAO ESTA SILENCIADA NO SCRIT PERL
 # resultado que sera impresso
 printar_especies = ''  # mod 11.05.22
 # o que usar para mlst
@@ -251,12 +245,12 @@ if (re.findall(re.compile(r'\w+\s\w+', re.I), check_especies)):  # mod 11.05.22
     genero, especie = check_especies.split(" ")
     # print "$genero\n$especie\n";
     # Associar o nome da especie ao banco do mlst e gravar o nome que sera dado como resultado final
-    # resultado_final_especie = f"{genero}{especie}"
+    # resultado_final_especie = f"{genero}{especie}" #MELISE: ESSA LINHA NAO ESTA SILENCIADA NO SCRIT PERL
     # $printar_especies = $resultado_final_especie;
     # $especie_mlst = "";
 else:
     printar_especies = check_especies
-    genero = check_especies
+    genero = check_especies #MELISE: ESSA LINHA NAO EXISTIA NO SCRIPT EM PERL
 # mod ate aqui 20.05.22
 
 #######################################################################################################################
@@ -287,6 +281,9 @@ elif resultado_final_especie == 'escherichiacoli':
 elif resultado_final_especie == 'staphylococcusaureus':
     especie_mlst = 'saureus'
     printar_especies = 'Staphylococcus aureus'
+elif resultado_final_especie == 'streptococcuspyogenes': #MELISE: ADICIONEI
+    especie_mlst = 'spyogenes'
+    printar_especies = 'Streptococcus pyogenes'
 elif resultado_final_especie == 'pseudomonasputida':
     especie_mlst = 'pputida'
     printar_especies = 'pseudomonas putida'
@@ -302,13 +299,11 @@ elif resultado_final_especie == 'klebsiellaoxytoca':
 elif resultado_final_especie == 'enterococcusfaecium':
     especie_mlst = 'efaecium'
     printar_especies = 'Enterococcus faecium'
-elif resultado_final_especie == 'serratiamarcescens':
-    especie_mlst = 'Nao disponivel'
-    printar_especies = 'Serratia marcescens'
-elif resultado_final_especie == 'providenciastuartii':
-    especie_mlst = 'Nao disponivel'
-    printar_especies = 'Providencia stuartii'
-elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii',
+elif re.match(r"acinetobacter.*", resultado_final_especie, re.I): #MELISE: ADICIONEI
+    especie_mlst = 'abaumannii_2' #MELISE: ADICIONEI
+elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii', "acinetobacternosocomialis",
+                                "acinetobacterpittii" , "acinetobacterseifertii", "acinetobacterdijkshoorniae", #MELISE: ADICIONEI
+                                "acinetobacterlactucae", "acinetobactercalcoaceticus", #MELISE: ADICIONEI
                                  "enterobactercloacae", "enterobacterhormaechei", "enterobacterasburiae",
                                  "enterobacterkobei", "enterobacterroggenkampii", "enterobacterludwigii"):
     lista = ""
@@ -324,12 +319,10 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
         result3 = alinhamento_outros_kleb.outros_kleb(
             montagem, fasta_outros, sample, THREADS)
         lista = '/opt/genomas_enterobacter/kleb_database/lista-kleb'  # CAMBIAR
-    elif resultado_final_especie == "acinetobacterbaumannii":
-        especie_mlst = 'abaumannii_2'
+    elif resultado_final_especie in ("acinetobacterbaumannii", "acinetobacternosocomialis",
+                                    "acinetobacterpittii" , "acinetobacterseifertii", "acinetobacterdijkshoorniae", #MELISE: ADICIONEI
+                                    "acinetobacterlactucae", "acinetobactercalcoaceticus"): #MELISE: ADICIONEI
         # $printar_especies = "Acinetobacter baumannii";
-        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_acineto_poli.fasta"
-        result2 = alinhamento_poli_acineto.poli_acineto(
-            montagem, fasta_polimixina, sample, THREADS)
         lista = '/opt/genomas_enterobacter/fastANI_acineto/list-acineto'  # CAMBIAR
     elif resultado_final_especie in ("enterobactercloacae", "enterobacterhormaechei", "enterobacterasburiae",
                                      "enterobacterkobei", "enterobacterroggenkampii", "enterobacterludwigii"):
@@ -359,6 +352,11 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
         fasta_polimixina = f"{_bn(db_polimixina)}/proteins_Ecloacae_poli.fasta"
         result2 = alinhamento_poli_enterobacter.poli_enterobacter(
             montagem, fasta_polimixina, sample, THREADS)
+
+    if re.search(r'Acinetobacter_baumannii', printar_especies, re.IGNORECASE): #MELISE: ADICIONEI
+        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_acineto_poli.fasta" #MELISE: ADICIONEI
+        result2 = alinhamento_poli_acineto.poli_acineto( #MELISE: ADICIONEI
+            montagem, fasta_polimixina, sample, THREADS) #MELISE: ADICIONEI
 else:
     # mod 20.05.22
     printar_especies = f"{genero} {especie}"  # mod 10.05.22
@@ -401,7 +399,7 @@ genes = []
 # print gal
 gal_file.write('Genes de resistência encontrados no WGS:\n')
 
-for n_l in selected:
+for n_l in selected: #MELISE: ADICIONEI NAS LINHAS DE genes.append "(allele confidence" + lines_blast[10] + ")")
     # print "$n\n";
     # separar as colunas do arquivo em elementos de um array
     lines_blast = n_l.split("\t")
@@ -409,60 +407,63 @@ for n_l in selected:
     out_blast = f"{lines_blast[5]} (ID:{lines_blast[10]} COV_Q:{lines_blast[9]} COV_DB:{lines_blast[6]})"
     select_imprimir.append(out_blast)
     # imprimir no arquivo do gal
-    if re.match(r'.*(blaKPC|blaNDM|blaVIM|blaIMP|blaSPM|blaOXA-23|blaOXA-24|blaOXA-25|blaOXA-26|blaOXA-27|blaOXA-48|blaOXA-51|blaOXA-58|blaOXA-64|blaOXA-65|blaOXA-69|blaOXA-90|blaOXA-72|blaOXA-98|blaOXA-116|blaOXA-117|blaOXA-160|blaOXA-175|blaOXA-176|blaOXA-253|blaOXA-343).*', lines_blast[5], re.I):
+    if re.match(r'.*(blaKPC|blaNDM|blaVIM|blaIMP|blaSPM|blaOXA-23|blaOXA-24|blaOXA-25|blaOXA-26|blaOXA-27|blaOXA-48|blaOXA-58|blaOXA-72|blaOXA-98|blaOXA-116|blaOXA-117|blaOXA-160|blaOXA-175|blaOXA-176|blaOXA-253).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (carbapenemase)\n";
-        genes.append(lines_blast[5] + " (carbapenemase)")
-    elif re.match(r'.*(blaTEM|blaSHV|blaADC|blaCTX-M|blaGES|blaOXA-(?!23|24|25|26|27|48|51|58|64|65|69|72|98|90|116|117|160|175|176|253|343)).*', lines_blast[5], re.I):
+        genes.append(lines_blast[5] + " (carbapenemase)" + "(allele confidence" + lines_blast[10] + ")")
+    elif re.match(r'.*(blaOXA-51|blaOXA-64|blaOXA-65|blaOXA-69|blaOXA-90|blaOXA-259|blaOXA-343).*', lines_blast[5], re.I):
+        # print OUT2 "$lines_blast[5] (OXA-51-like carbapenemase)\n";
+        genes.append(lines_blast[5] + " (OXA-51-like carbapenemase)" + "(allele confidence" + lines_blast[10] + ")")
+    elif re.match(r'.*(blaTEM|blaSHV|blaADC|blaCTX-M|blaGES|blaOXA-(?!23|24|25|26|27|48|58|72|98|116|117|160|175|176|253|488|486)).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (ESBL)\n";
-        genes.append(lines_blast[5] + " (ESBL)")
+        genes.append(lines_blast[5] + " (ESBL)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r"(aac\(6\'\)-Ib-cr).*", lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a aminoglicosídeos e fluoroquinolonas)\n";
         genes.append(
-            f"{lines_blast[5]} (resistance to aminoglycosides and fluoroquinolones)")
+            f"{lines_blast[5]} (resistance to aminoglycosides and fluoroquinolones)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'(aph|aac|rmt|aad).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a aminoglicosídeos)\n";
-        genes.append(f"{lines_blast[5]} (resistance to aminoglycosides)")
+        genes.append(f"{lines_blast[5]} (resistance to aminoglycosides)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'(cat|cml|cmx|floR).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia ao cloranfenicol)\n";
-        genes.append(f"{lines_blast[5]} (resistance to chloramphenicol)")
+        genes.append(f"{lines_blast[5]} (resistance to chloramphenicol)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'(qnr|oqx).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a fluoroquinolonas)\n";
-        genes.append(f"{lines_blast[5]} (resistance to fluoroquinolones)")
+        genes.append(f"{lines_blast[5]} (resistance to fluoroquinolones)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'sul.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a sulfonamidas)\n";
-        genes.append(f"{lines_blast[5]} (resistance to sulfonamidas)")
+        genes.append(f"{lines_blast[5]} (resistance to sulfonamidas)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'dfrA.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a trimetoprim)\n";
-        genes.append(f"{lines_blast[5]} (resistance to trimetoprim)")
+        genes.append(f"{lines_blast[5]} (resistance to trimetoprim)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'tet.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a tetraciclina)\n";
-        genes.append(f"{lines_blast[5]} (resistance to tetracycline)")
+        genes.append(f"{lines_blast[5]} (resistance to tetracycline)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'ere.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a eritromicina)\n";
-        genes.append(f"{lines_blast[5]} (resistance to eritromicina)")
+        genes.append(f"{lines_blast[5]} (resistance to eritromicina)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'erm.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a lincosamidas, macrolideos e estreptograminas)\n";
         genes.append(
-            f"{lines_blast[5]} (resistance to lincosamides, macrolides and streptogramins)")
+            f"{lines_blast[5]} (resistance to lincosamides, macrolides and streptogramins)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'ARR.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a rifampicina)\n";
-        genes.append(f"{lines_blast[5]} (resistance to rifampicin)")
+        genes.append(f"{lines_blast[5]} (resistance to rifampicin)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'(mph|msr).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a macrolideos)\n";
-        genes.append(f"{lines_blast[5]} (resistance to macrolides)")
+        genes.append(f"{lines_blast[5]} (resistance to macrolides)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'.*Van.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a vancomicina)\n";
-        genes.append(f"{lines_blast[5]} (resistance to vancomycin)")
+        genes.append(f"{lines_blast[5]} (resistance to vancomycin)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'.*lsa.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a vancomicina)\n";
-        genes.append(f"{lines_blast[5]} (resistance to clindamycin)")
+        genes.append(f"{lines_blast[5]} (resistance to clindamycin)" + "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'.*mcr.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a vancomicina)\n";
         # COLOCAR O NOME EM INGLES
-        genes.append(f"{lines_blast[5]} (resistance to polymyxin)")
+        genes.append(f"{lines_blast[5]} (resistance to polymyxin)" + "(allele confidence" + lines_blast[10] + ")")
     else:
         # print OUT2 "$lines_blast[5]\n";
-        genes.append(f"{lines_blast[5]}")
+        genes.append(f"{lines_blast[5]}" + "(allele confidence" + lines_blast[10] + ")")
 
 # imprimir resultados com a classe do antimicrobiano
 
