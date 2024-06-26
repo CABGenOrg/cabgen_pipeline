@@ -2,20 +2,20 @@ import subprocess
 import re
 
 
-def outros_pseudo(arquivo_contig, caminho_db_poli, sample):
+def outros_pseudo(montagem, fasta_outros, sample):
     # Run blastx using the database of genes associated with drug resistance
-    blastx_polim = [
+    blastx_outros = [
         "blastx",
-        "-db", caminho_db_poli,
-        "-query", arquivo_contig,
+        "-db", fasta_outros,
+        "-query", montagem,
         "-evalue", "0.001",
         "-out", f"{sample}_BLASTXoutros"
     ]
 
-    result = subprocess.run(blastx_polim, capture_output=True)
+    result = subprocess.run(blastx_outros, capture_output=True)
     if result.returncode != 0:
         raise RuntimeError(
-            f"system {blastx_polim} failed: {result.returncode}")
+            f"system {blastx_outros} failed: {result.returncode}")
 
     # Open the blastx output file
     resultado_outros = f"{sample}_BLASTXoutros"

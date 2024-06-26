@@ -2,12 +2,12 @@ import subprocess
 import re
 
 
-def outros_acineto(arquivo_contig, caminho_db_outros, sample):
+def outros_acineto(montagem, fasta_outros, sample):
     # Run blastx using the database of genes associated with drug resistance
     blastx_outros = [
         "blastx",
-        "-db", caminho_db_outros,
-        "-query", arquivo_contig,
+        "-db", fasta_outros,
+        "-query", montagem,
         "-evalue", "0.001",
         "-out", f"{sample}_BLASTXoutros"
     ]

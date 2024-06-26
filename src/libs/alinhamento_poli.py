@@ -2,13 +2,13 @@ import subprocess
 import re
 
 
-def poli(arquivo_contig, caminho_db_poli, sample):
+def poli(montagem, fasta_polimixina, sample):
     # Run blastx using the database of genes associated with polymyxin
     # resistance
     blastx_polim = [
         "blastx",
-        "-db", caminho_db_poli,
-        "-query", arquivo_contig,
+        "-db", fasta_polimixina,
+        "-query", montagem,
         "-evalue", "0.001",
         "-out", f"{sample}_BLASTXpolimixina"
     ]

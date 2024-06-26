@@ -2,12 +2,12 @@ import subprocess
 import re
 
 
-def poli_pseudo(arquivo_contig, caminho_db_poli, sample):
+def poli_pseudo(montagem, fasta_polimixina, sample):
     # Run blastx using the database of genes associated with drug resistance
     blastx_polim = [
         "blastx",
-        "-db", caminho_db_poli,
-        "-query", arquivo_contig,
+        "-db", fasta_polimixina,
+        "-query", montagem,
         "-evalue", "0.001",
         "-out", f"{sample}_BLASTXpolimixina"
     ]
@@ -64,12 +64,12 @@ def poli_pseudo(arquivo_contig, caminho_db_poli, sample):
             id_porc = int(m.group(2))
             gaps = m.group(3)
 
-            if id_porc > 80:
-                result_entry = f"{sbjct},id:{identities} {id_porc}%,gap:{gaps}|"
-                # Uncomment the next line if you want to use `result_entry` in some way
-                # result.append(result_entry)
+            if tamanho[1] < ((tam_ref / 100) * 90) and id_porc > 80:
+                mutation = f"{sbjct} truncation: {tamanho[1]}/{tam_ref},"
+                result.append(mutation)
 
-        if re.match(r"(Query\s\s(\d*)\s*)(\S*)\s*(\d*)", line, re.IGNORECASE) and id_porc > 80:
+        if re.match(r"(Query\s\s(\d*)\s*)(\S*)\s*(\d*)", line, re.IGNORECASE) \
+                and id_porc > 80:
             space = len(re.match(r"(Query\s\s(\d*)\s*)(\S*)\s*(\d*)",
                         line, re.IGNORECASE).group(1))
             aa_1 = list(re.match(r"(Query\s\s(\d*)\s*)(\S*)\s*(\d*)",
@@ -95,32 +95,9 @@ def poli_pseudo(arquivo_contig, caminho_db_poli, sample):
                         else:
                             position = inicio + i
 
-                        truncation_condition = tamanho[1] < (
-                            (tam_ref / 100) * 90)
-                        mutation_condition = {
-                            "PmrA": "PmrA",
-                            "PmrB": "PmrB",
-                            "PhoQ": "PhoQ",
-                            "ParR": "ParR",
-                            "ParS": "ParS",
-                            "CrpS": "CrpS",
-                            "ColR": "ColR",
-                            "ColS": "ColS"
-                        }
-
-                        if sbjct in mutation_condition:
-                            if truncation_condition:
-                                mutation = f"{sbjct} truncation: {tamanho[1]}/{tam_ref},"
-                                result.append(mutation)
-                                continue
-                            else:
+                        if sbjct in ["PmrB", "PmrA", "ParR", "PhoP", "PhoQ", "CrpS" , "ParS", "ColR" , "ColS"]:
+                            if tamanho[1] > ((tam_ref / 100) * 90):
                                 mutation = f"{sbjct}:{aa_2[i]}{position}{aa_1[i]},"
-                                if sbjct == "PmrA" and re.match(r".*T31I.*", mutation, re.IGNORECASE):
-                                    provean = re.match(
-                                        r"(.*T31I.*),", mutation, re.IGNORECASE).group(1) + '(deleterious),'
-                                    print(f"\n\n{provean}\n\n")
-                                    result.append(provean)
-                                else:
-                                    result.append(mutation)
+                                result.append(mutation)
 
     return result
