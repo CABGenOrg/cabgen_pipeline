@@ -2,3 +2,7 @@ lib/
 python_libs/
 *.sh
 *.pl
+*.DS_Store
+mock_main.py
+*__pycache__/
+*.venv
