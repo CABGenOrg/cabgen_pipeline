@@ -1,77 +1,99 @@
 import re
 from typing import List, Tuple
 
+sbjct_pattern = re.compile(r">([\w]+)\|", re.I)
+sbjct_length_pattern = re.compile(r"Length=(\d+)", re.I)
+identities_total_pattern = re.compile(r"Identities = \d+\/(\d+)", re.I)
+perc_identity_pattern = re.compile(
+    r"Identities = \d+\/\d+\s\((\d+)%\)", re.I)
+query_sequence_pattern = re.compile(r"Query\s+\d+\s+(\w+)", re.I)
+alignment_sequence_pattern = re.compile(
+    r"^\s+[ACDEFGHIKLMNPQRSTVWY\+\s]+$", re.I)
+subject_sequence_pattern = re.compile(r"Sbjct\s+(\d+)\s+(\w+)\s+(\d+)", re.I)
+
 
 def find_mutation(blast_result_path: str, mutations: List[str]) -> List[str]:
     try:
         with open(blast_result_path, "r") as infile:
-            lines = infile.readlines()
+            lines = [line.rstrip() for line in infile.readlines()]
     except FileNotFoundError:
         raise FileNotFoundError(f"File {blast_result_path} not open")
 
+    sbjct = None
+    sbjct_length = 0
+    identities_total = 0
+    perc_identity = 0
+    query_sequence = []
+    subject_sequence = []
     result = []
-    sbjct = ""
-    tam_ref = 0
-    id_porc = 0
-    tamanho = []
-    space = 0
-    aa_1 = []
-    aa_alinh = []
-    teste = 0
+    alignment_sequence = []
+    position = 0
+    test = 0
 
     for line in lines:
-        line = line.strip()
-
-        sbjct_match = re.match(r"^>([\w:]+).*", line, re.IGNORECASE)
+        # Identify the subject
+        sbjct_match = sbjct_pattern.search(line)
         if sbjct_match:
             sbjct = sbjct_match.group(1)
 
-        length_match = re.match(r"^Length=(\d*)", line, re.IGNORECASE)
-        if length_match:
-            tam_ref = int(length_match.group(1))
+        # Identify the length of the subject sequence
+        sbjct_length_match = sbjct_length_pattern.search(line)
+        if sbjct_length_match:
+            sbjct_length = int(sbjct_length_match.group(1))
 
-        identities_match = re.match(
-            (r".*Identities\s=\s(\d*/\d*)\s\((\d*)%\),\s."
-             r"*Gaps\s=\s(\d*/\d*)\s.*"),
-            line, re.IGNORECASE)
-        if identities_match:
-            identities = identities_match.group(1)
-            tamanho = [int(x) for x in identities.split('/')]
-            id_porc = int(identities_match.group(2))
+        # Identify identities
+        identities_total_match = identities_total_pattern.search(line)
+        perc_identity_match = perc_identity_pattern.search(line)
+        if identities_total_match and perc_identity_match:
+            identities_total = int(identities_total_match.group(1))
+            perc_identity = int(perc_identity_match.group(1))
 
-            if tamanho[1] < ((tam_ref / 100) * 90) and id_porc > 80:
-                mutation = f"{sbjct} truncation: {tamanho[1]}/{tam_ref},"
+            # Check for truncation
+            if (identities_total < (sbjct_length / 100) * 90) \
+                    and (perc_identity > 80):
+                mutation = f"{sbjct} truncation: {
+                    identities_total}/{sbjct_length},"
                 result.append(mutation)
 
-        query_match = re.match(r"(Query\s\s(\d*)\s*)(\S*)\s*(\d*)", line,
-                               re.IGNORECASE)
-        if query_match and id_porc > 90:
-            space = len(query_match.group(1))
-            aa_1 = list(query_match.group(3))
+        # Identify query sequence line
+        query_sequence_match = query_sequence_pattern.search(line)
+        if query_sequence_match and perc_identity > 90:
+            query_sequence = list(query_sequence_match.group(1).strip())
 
-        align_match = re.match(r"^\s{%d}(.*)" % space, line, re.IGNORECASE)
-        if align_match and id_porc > 90:
-            aa_alinh = list(align_match.group(1))
+        # Identify alignment line
+        alignment_sequence_match = alignment_sequence_pattern.search(line)
+        if alignment_sequence_match and perc_identity > 90:
+            alignment_sequence = list(alignment_sequence_match.group().strip())
 
-        sbjct_match = re.match(r"Sbjct\s\s(\d*)\s*(\S*)\s*(\d*)", line,
-                               re.IGNORECASE)
-        if sbjct_match and id_porc > 90:
-            inicio = int(sbjct_match.group(1))
-            final = int(sbjct_match.group(3))
-            aa_2 = list(sbjct_match.group(2))
+        # Identify subject sequence line
+        subject_sequence_match = subject_sequence_pattern.search(line)
+        if subject_sequence_match and perc_identity > 90:
+            subject_sequence = list(subject_sequence_match.group(2).strip())
+            subject_sequence_start = int(subject_sequence_match.group(1))
+            subject_sequence_end = int(subject_sequence_match.group(3))
 
-            if inicio == 1:
-                teste = 1
+            if subject_sequence_start == 1:
+                test = 1
 
-            if teste == 1:
-                for i in range(min(60, len(aa_1), len(aa_alinh))):
-                    if aa_1[i].upper() != aa_alinh[i].upper():
-                        position = inicio - i if inicio > final else inicio + i
+            if test == 1:
+                for i in range(60):
+                    if i > len(query_sequence) - 1:
+                        break
+                    query_aa = query_sequence[i].upper()
+                    alignment_aa = alignment_sequence[i].upper()
+                    subject_aa = subject_sequence[i].upper()
 
-                        if sbjct in mutations and tamanho[1] > \
-                                ((tam_ref / 100) * 90):
-                            mutation = f"{sbjct}:{aa_2[i]}{position}{aa_1[i]},"
-                            result.append(mutation)
+                    if query_aa != alignment_aa:
+                        if subject_sequence_start > subject_sequence_end:
+                            position = subject_sequence_start - i
+                        else:
+                            position = subject_sequence_start + i
+
+                        if sbjct in mutations and query_aa != subject_aa:
+                            if identities_total > (sbjct_length / 100) * 90:
+                                mutation = (f"{sbjct}:{subject_aa}"
+                                            f"{position}{query_aa},")
+                                result.append(mutation)
 
     return result
 
