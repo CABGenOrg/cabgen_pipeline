@@ -346,11 +346,18 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
         fasta_polimixina = f"{_bn(db_polimixina)}/proteins_Ecloacae_poli.fasta"
         result2 = alinhamento_poli_enterobacter.poli_enterobacter(
             montagem, fasta_polimixina, sample, THREADS)
+        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_Ecloacae.fasta"
+        result3 = alinhamento_outros_Ecloacae.outros_ecloacae(
+            montagem, fasta_outros, sample, THREADS)
 
     if re.search(r'Acinetobacter_baumannii', printar_especies, re.IGNORECASE): 
         fasta_polimixina = f"{_bn(db_polimixina)}/proteins_acineto_poli.fasta" 
         result2 = alinhamento_poli_acineto.poli_acineto( 
             montagem, fasta_polimixina, sample, THREADS) 
+        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_acineto.fasta"
+        result3 = alinhamento_outros_acineto.outros_acineto(
+            montagem, fasta_outros, sample, THREADS)
+
 else:
     # mod 20.05.22
     printar_especies = f"{genero} {especie}"  # mod 10.05.22
