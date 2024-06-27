@@ -89,12 +89,6 @@ kraken2_install = sys.argv[8]
 # entrar com o caminho do unicycler
 unicycler = sys.argv[9]
 
-#MELISE: PODE APAGAR
-# criar um diretorio para unicycler
-# my @unicycler_dir = ("mkdir","$caminho1/$sample/unicycler");
-# system(@unicycler_dir) == 0
-# or die "system @unicycler_dir failes: $?";
-
 print('Parametros: ')
 print(f"caminho: {_bn(caminho1)} ")
 print(f"Sample: {_bn(sample)} ")
@@ -281,7 +275,7 @@ elif resultado_final_especie == 'escherichiacoli':
 elif resultado_final_especie == 'staphylococcusaureus':
     especie_mlst = 'saureus'
     printar_especies = 'Staphylococcus aureus'
-elif resultado_final_especie == 'streptococcuspyogenes': #MELISE: ADICIONEI
+elif resultado_final_especie == 'streptococcuspyogenes': 
     especie_mlst = 'spyogenes'
     printar_especies = 'Streptococcus pyogenes'
 elif resultado_final_especie == 'pseudomonasputida':
@@ -302,8 +296,8 @@ elif resultado_final_especie == 'enterococcusfaecium':
 elif re.match(r"acinetobacter.*", resultado_final_especie, re.I): #MELISE: ADICIONEI
     especie_mlst = 'abaumannii_2' #MELISE: ADICIONEI
 elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii', "acinetobacternosocomialis",
-                                "acinetobacterpittii" , "acinetobacterseifertii", "acinetobacterdijkshoorniae", #MELISE: ADICIONEI
-                                "acinetobacterlactucae", "acinetobactercalcoaceticus", #MELISE: ADICIONEI
+                                "acinetobacterpittii" , "acinetobacterseifertii", "acinetobacterdijkshoorniae", 
+                                "acinetobacterlactucae", "acinetobactercalcoaceticus", 
                                  "enterobactercloacae", "enterobacterhormaechei", "enterobacterasburiae",
                                  "enterobacterkobei", "enterobacterroggenkampii", "enterobacterludwigii"):
     lista = ""
@@ -318,16 +312,16 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
         fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_kleb.fasta"
         result3 = alinhamento_outros_kleb.outros_kleb(
             montagem, fasta_outros, sample, THREADS)
-        lista = '/opt/genomas_enterobacter/kleb_database/lista-kleb'  # CAMBIAR
+        lista = '/opt/genomas_enterobacter/kleb_database/lista-kleb'  
     elif resultado_final_especie in ("acinetobacterbaumannii", "acinetobacternosocomialis",
-                                    "acinetobacterpittii" , "acinetobacterseifertii", "acinetobacterdijkshoorniae", #MELISE: ADICIONEI
-                                    "acinetobacterlactucae", "acinetobactercalcoaceticus"): #MELISE: ADICIONEI
+                                    "acinetobacterpittii" , "acinetobacterseifertii", "acinetobacterdijkshoorniae", 
+                                    "acinetobacterlactucae", "acinetobactercalcoaceticus"): 
         # $printar_especies = "Acinetobacter baumannii";
-        lista = '/opt/genomas_enterobacter/fastANI_acineto/list-acineto'  # CAMBIAR
+        lista = '/opt/genomas_enterobacter/fastANI_acineto/list-acineto'  
     elif resultado_final_especie in ("enterobactercloacae", "enterobacterhormaechei", "enterobacterasburiae",
                                      "enterobacterkobei", "enterobacterroggenkampii", "enterobacterludwigii"):
         especie_mlst = "ecloacae"
-        lista = '/opt/genomas_enterobacter/fastANI/list_entero'  # CAMBIAR
+        lista = '/opt/genomas_enterobacter/fastANI/list_entero'  
         fastANI_txt = 'Rodar fastANI para subespecie'
 
     print(fastANI_txt)
@@ -352,11 +346,18 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
         fasta_polimixina = f"{_bn(db_polimixina)}/proteins_Ecloacae_poli.fasta"
         result2 = alinhamento_poli_enterobacter.poli_enterobacter(
             montagem, fasta_polimixina, sample, THREADS)
+        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_Ecloacae.fasta"
+        result3 = alinhamento_outros_Ecloacae.outros_ecloacae(
+            montagem, fasta_outros, sample, THREADS)
 
-    if re.search(r'Acinetobacter_baumannii', printar_especies, re.IGNORECASE): #MELISE: ADICIONEI
-        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_acineto_poli.fasta" #MELISE: ADICIONEI
-        result2 = alinhamento_poli_acineto.poli_acineto( #MELISE: ADICIONEI
-            montagem, fasta_polimixina, sample, THREADS) #MELISE: ADICIONEI
+    if re.search(r'Acinetobacter_baumannii', printar_especies, re.IGNORECASE): 
+        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_acineto_poli.fasta" 
+        result2 = alinhamento_poli_acineto.poli_acineto( 
+            montagem, fasta_polimixina, sample, THREADS) 
+        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_acineto.fasta"
+        result3 = alinhamento_outros_acineto.outros_acineto(
+            montagem, fasta_outros, sample, THREADS)
+
 else:
     # mod 20.05.22
     printar_especies = f"{genero} {especie}"  # mod 10.05.22
