@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-import os
 import re
 import sys
 import shutil
 import pathlib
+from os import path, makedirs
+from src.handle_programs import run_command_line
 from src.handle_processing import run_blast_and_check_mutations, BacteriaDict
-from libs.tools import _bn, _str, sp_runner, count_kraken_words, get_abricate_result, MongoSaver
+from libs.tools import count_kraken_words, get_abricate_result, MongoSaver
 
 
 sys.path[0:0] = ['/opt/pipeline/lib/']
@@ -47,12 +48,12 @@ caminho1 = sys.argv[0]
 # Guardar o nome da amostra com o _S*
 sample = sys.argv[1]
 # para pegar o numero da amostra antes do _S1
-sample1 = _str(sample).split('_')
+sample1 = str(sample).split('_')
 sample2 = sample1[0]
-print(f"Sample: {_bn(sample2)}")
+print(f"Sample: {path.basename(sample2)}")
 
 # criar um diretório para a amostra
-os.makedirs(f"{_bn(caminho1)}/{_bn(sample)}", exist_ok=True)
+makedirs(f"{path.basename(caminho1)}/{path.basename(sample)}", exist_ok=True)
 
 # caminho para onde esta instalado o abricate ex: ./abricate/bin/abricate
 
@@ -82,17 +83,17 @@ kraken2_install = sys.argv[8]
 unicycler = sys.argv[9]
 
 print('Parametros: ')
-print(f"caminho: {_bn(caminho1)} ")
-print(f"Sample: {_bn(sample)} ")
-print(f"SAmple2: {_bn(sample2)} ")
-print(f"camino abricate: {_bn(caminho_abricate)} ")
-print(f"camino abricate caminho_output: {_bn(caminho_output)} ")
-print(f"camino abricate kmerdb_install: {_bn(kmerdb_install)} ")
-print(f"mlst install: {_bn(mlst_install)}  ")
-print(f"db polimixina: {_bn(db_polimixina)}  ")
-print(f"db outros mut: {_bn(db_outrosMut)}  ")
-print(f"kraken2_install: {_bn(kraken2_install)}  ")
-print(f"unicycler: {_bn(unicycler)} ")
+print(f"caminho: {path.basename(caminho1)} ")
+print(f"Sample: {path.basename(sample)} ")
+print(f"SAmple2: {path.basename(sample2)} ")
+print(f"camino abricate: {path.basename(caminho_abricate)} ")
+print(f"camino abricate caminho_output: {path.basename(caminho_output)} ")
+print(f"camino abricate kmerdb_install: {path.basename(kmerdb_install)} ")
+print(f"mlst install: {path.basename(mlst_install)}  ")
+print(f"db polimixina: {path.basename(db_polimixina)}  ")
+print(f"db outros mut: {path.basename(db_outrosMut)}  ")
+print(f"kraken2_install: {path.basename(kraken2_install)}  ")
+print(f"unicycler: {path.basename(unicycler)} ")
 
 R1 = sys.argv[10]
 R2 = sys.argv[11]
@@ -101,20 +102,24 @@ mongo_saver = MongoSaver(caminho_output, sample2)  # mongodb instance saver
 
 ##################################################
 # rodar unicycler
-unicycler_exe = " ".join(['unicycler', '-1', f"{_bn(R1)}", '-2', f"{_bn(R2)}", '-o', f"{_bn(caminho1)}/{_bn(sample)}/unicycler",
-                         '--min_fasta_length', '500', '--mode', 'conservative', '-t', THREADS, '--spades_path', '/opt/SPAdes-3.13.0-Linux/bin/spades.py'])
-sp_runner(unicycler_exe)
+unicycler_line = (f"unicycler -1 {path.basename(R1)} -2 {path.basename(R2)} "
+                  f"-o {path.basename(caminho1)}/{path.basename(sample)}/"
+                  "unicyler --min_fasta_length 500 --mode conservative "
+                  f"-t {THREADS} --spades_path /opt/SPAdes-3.13.0-Linux/bin/"
+                  "spades.py")
+run_command_line(unicycler_line)
 
 # arquivo assembly.fasta da amostra
 
-montagem = f"{_bn(caminho1)}/{_bn(sample)}/unicycler/assembly.fasta"
+montagem = f"{path.basename(
+    caminho1)}/{path.basename(sample)}/unicycler/assembly.fasta"
 
 ###############################################################################
 # rodar prokka
-prokka_exe = " ".join(['prokka', '--outdir', f"{_bn(caminho1)}/{_bn(sample)}/prokka",
-                      # --cpus 0 is ALL
-                       '--prefix', 'genome', f"{montagem}", '--force', "--cpus", "0"])
-sp_runner(prokka_exe)
+prokka_line = (f"prokka --outdir {path.basename(caminho1)}/"
+               f"{path.basename(sample)}/prokka --prefix genome {montagem} "
+               "--force --cpus 0")
+run_command_line(prokka_line)
 
 # EXCLUSIVO DO PIPELINE OUTPUT
 
@@ -133,28 +138,28 @@ gal_file = open('resultado_gal.txt', mode="a", encoding='utf-8')
 
 # printar no arquivo final o nome da amostra na primeira linha
 gal_file.write(
-    f"\nAmostra {_bn(sample)}\nResultados relevantes do sequenciamento do genoma total (WGS):\n")
+    f"\nAmostra {path.basename(sample)}\nResultados relevantes do sequenciamento do genoma total (WGS):\n")
 
 
 #####################################################################################
 # Rodar o CheckM para saber qualidade da corrida
 # Copiar o arquivo assembly.fasta para a pasta do CheckM checkM_bins
-os.makedirs("checkM_bins", exist_ok=True)
-shutil.copy(os.path.join(".", f"{montagem}"), os.path.join(".", 'checkM_bins'))
+makedirs("checkM_bins", exist_ok=True)
+shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
 
 # rodar o CheckM
-checkM = " ".join(['checkm', 'lineage_wf', '-x', 'fasta', 'checkM_bins',
-                  'checkM_bins', "--threads", THREADS, "--pplacer_threads", THREADS])
-sp_runner(checkM)
+checkM_line = ("checkm lineage_wf -x fasta checkM_bins checkM_bins"
+               f"--threads {THREADS} --pplacer_threads {THREADS}")
+checkM_qa_line = (f"checkm qa -o 2 -f checkM_bins/{path.basename(sample)}"
+                  "_resultados --tab_table checkM_bins/lineage.ms checkM_bins "
+                  f"--threads {THREADS}")
 
-checkM_qa = " ".join(['checkm', 'qa', '-o', '2', '-f',
-                     f"checkM_bins/{_bn(sample)}_resultados", '--tab_table', 'checkM_bins/lineage.ms', 'checkM_bins', "--threads", THREADS])
-sp_runner(checkM_qa)
-
+run_command_line(checkM_line)
+run_command_line(checkM_qa_line)
 # apagar arquivos gerados, deixando apenas resultados
 shutil.rmtree('checkM_bins/bins', ignore_errors=True)
 shutil.rmtree('checkM_bins/storage', ignore_errors=True)
-# MELIE: NAO ENTENDI PORQUE AQUI NÃO REMOVER OS ARQUIVOS
+# MELISE: NAO ENTENDI PORQUE AQUI NÃO REMOVER OS ARQUIVOS
 pathlib.Path('checkM_bins/assembly.fasta').unlink(missing_ok=True)
 pathlib.Path('checkM_bins/lineage.ms').unlink(missing_ok=True)
 pathlib.Path('checkM_bins/checkm.log').unlink(missing_ok=True)
@@ -167,7 +172,7 @@ print('Salvando resultado no mongo relatorios')
 
 genome_size = None
 
-with open(f"checkM_bins/{_bn(sample)}_resultados") as IN_check:
+with open(f"checkM_bins/{path.basename(sample)}_resultados") as IN_check:
     next(IN_check)  # ignore header
     for row in IN_check:
         # remove \n of the line end
@@ -189,15 +194,19 @@ mongo_saver.save('sample', sample)
 # Identificar especie usando o kraken
 
 print('rodar o kraken')
-kraken = " ".join([f"{_bn(kraken2_install)}/kraken2", '--db', f"{_bn(kraken2_install)}/minikraken2_v2_8GB_201904_UPDATE",
-                  '--use-names', '--paired', f"{_bn(R1)}", f"{_bn(R2)}", '--output', 'out_kraken', "--threads", THREADS])
-sp_runner(kraken)
+kraken_line = (f"{path.basename(kraken2_install)}/kraken2 "
+               f"--db {path.basename(kraken2_install)}/minikraken2_v2_8GB"
+               "_201904_UPDATE "
+               f"--use-names --paired {path.basename(R1)},{path.basename(R2)} "
+               f"--output out_kraken --threads {THREADS}")
+run_command_line(kraken_line)
 
 print("splitting output into %s equal files" % THREADS)
 preffix = "krk"
-splitter = " ".join(["split", "--numeric-suffixes=1", "-n",
-                    f"l/{THREADS}", "out_kraken", preffix])
-sp_runner(splitter)
+splitter_line = (f"split --numeric-suffixes=1 -n l/{THREADS} "
+                 f"out_kraken {preffix}")
+run_command_line(splitter_line)
+
 ordenado = count_kraken_words(int(THREADS), preffix)
 
 # contar qts vezes aparece cada especie
@@ -256,7 +265,8 @@ print(f"resultado_final_especie: {resultado_final_especie}")
 if resultado_final_especie == 'pseudomonasaeruginosa':
     especie_mlst = 'paeruginosa'
     printar_especies = 'Pseudomonas aeruginosa'
-    fasta_polimixina = f"{_bn(db_polimixina)}/proteins_pseudo_poli.fasta"
+    fasta_polimixina = f"{path.basename(
+        db_polimixina)}/proteins_pseudo_poli.fasta"
 
     bacteria_dict: BacteriaDict = {"species": resultado_final_especie,
                                    "assembly_file": montagem,
@@ -303,8 +313,10 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
     if resultado_final_especie == 'klebsiellapneumoniae':
         especie_mlst = 'kpneumoniae'
         # $printar_especies = "Klebsiella pneumoniae";
-        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_kleb_poli.fasta"
-        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_kleb.fasta"
+        fasta_polimixina = f"{path.basename(
+            db_polimixina)}/proteins_kleb_poli.fasta"
+        fasta_outros = f"{path.basename(
+            db_outrosMut)}/proteins_outrasMut_kleb.fasta"
 
         bacteria_dict: BacteriaDict = {"species": resultado_final_especie,
                                        "assembly_file": montagem,
@@ -330,24 +342,28 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
     print(fastANI_txt)
     # Abrir o arquivo lista
 
-    fastani = " ".join(['/opt/FastANI/fastANI', '-q', f"{_bn(caminho1)}/{_bn(sample)}/unicycler/assembly.fasta",
-                       '--rl', f"{lista}", '-o', f"{_bn(sample)}_out-fastANI", "--threads", THREADS])
-    sp_runner(fastani)
+    fastani_line = (f"/opt/FastANI/fastANI -q {path.basename(caminho1)}/"
+                    f"{path.basename(sample)}/unicycler/assembly.fasta "
+                    f"--rl {lista} -o {path.basename(sample)}_out-fastANI "
+                    f"--threads {THREADS}")
+    run_command_line(fastani_line)
 
     # abrir output
     # Abrir o arquivo do output de distancia
     # array para guardar especies
 
     print('resultado do fastANI')
-    with open(f"{_bn(sample)}_out-fastANI", "r") as IN7:
+    with open(f"{path.basename(sample)}_out-fastANI", "r") as IN7:
         especiE = IN7.readline().rstrip("\n").split('\t')  # first line only
         preidentificacao = especiE[1].split("/")
         identificacao = preidentificacao[-1].split(".")
         printar_especies = identificacao[0]
 
     if 'Enterobacter_cloacae_subsp_cloacae' == printar_especies:
-        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_Ecloacae_poli.fasta"
-        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_Ecloacae.fasta"
+        fasta_polimixina = f"{path.basename(
+            db_polimixina)}/proteins_Ecloacae_poli.fasta"
+        fasta_outros = f"{path.basename(
+            db_outrosMut)}/proteins_outrasMut_Ecloacae.fasta"
 
         bacteria_dict: BacteriaDict = {"species": printar_especies,
                                        "assembly_file": montagem,
@@ -360,8 +376,10 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
         result3, result2 = run_blast_and_check_mutations(bacteria_dict)
 
     if 'Acinetobacter_baumannii' in printar_especies:
-        fasta_polimixina = f"{_bn(db_polimixina)}/proteins_acineto_poli.fasta"
-        fasta_outros = f"{_bn(db_outrosMut)}/proteins_outrasMut_acineto.fasta"
+        fasta_polimixina = f"{path.basename(
+            db_polimixina)}/proteins_acineto_poli.fasta"
+        fasta_outros = f"{path.basename(
+            db_outrosMut)}/proteins_outrasMut_acineto.fasta"
 
         bacteria_dict: BacteriaDict = {"species": printar_especies,
                                        "assembly_file": montagem,
@@ -387,14 +405,15 @@ if float(contaminacao) <= 10.:
     # print OUT2 "$printar_especies\t";
     mongo_saver.save('especie', printar_especies)
     # para o gal
-    gal_file.write(f"Espécie identificada: {_bn(printar_especies)}\n")
+    gal_file.write(f"Espécie identificada: {
+                   path.basename(printar_especies)}\n")
 else:
     # print OUT2 "$printar_especies\t";
-    imprimir = f"{maior_repeticao} {_bn(repeticoes[0][1])} {segunda_repeticao} {
-        _bn(repeticoes[1][1])}"
+    imprimir = f"{maior_repeticao} {path.basename(repeticoes[0][1])} {segunda_repeticao} {
+        path.basename(repeticoes[1][1])}"
     mongo_saver.save('especie', imprimir)
     # para o gal
-    gal_file.write(f"Espécie: CONTAMINAÇÃO {_bn(imprimir)}\n")
+    gal_file.write(f"Espécie: CONTAMINAÇÃO {path.basename(imprimir)}\n")
 
 # else {
 #        	print OUT2 "$maior_repeticao $count_ordenado2{$maior_repeticao} $segunda_repeticao $count_ordenado2{$segunda_repeticao}\t";
@@ -403,10 +422,12 @@ else:
 ###############################################################################################
 # Rodar ABRICATE
 # Para resistencia usando o ResFinder (porque so tem resistencia adquirida)
-abricante_out = f"{_bn(sample)}_outAbricateRes"
-abricante_exe = " ".join([f"{_bn(caminho_abricate)}", "--db", "resfinder",
-                         f"{_bn(caminho1)}/{_bn(sample)}/prokka/genome.ffn", ">", abricante_out, '--threads', THREADS])
-sp_runner(abricante_exe)
+abricante_out = f"{path.basename(sample)}_outAbricateRes"
+abricate_line = (f"{path.basename(caminho_abricate)} --db resfinder "
+                 f"{path.basename(caminho1)}/{path.basename(sample)}/prokka"
+                 f"/genome.ffn > {abricante_out} --threads {THREADS}")
+run_command_line(abricate_line)
+
 selected = get_abricate_result(abricante_out, resistencia=True)
 select_imprimir = []
 
@@ -507,10 +528,13 @@ mongo_saver.save("resfinder", "<br>".join(select_imprimir))
 
 ################################################################################################
 # Rodar abricate para VFDB (Virulence factor)
-abricante_out = f"{_bn(sample)}_outAbricateVFDB"
-abricante_exe = " ".join([f"{_bn(caminho_abricate)}", "--db", "vfdb",
-                         f"{_bn(caminho1)}/{_bn(sample)}/prokka/genome.ffn", ">", abricante_out, '--threads', THREADS])
-sp_runner(abricante_exe)
+abricante_out = f"{path.basename(sample)}_outAbricateVFDB"
+abricate_line = (f"{path.basename(caminho_abricate)} --db vfdb "
+                 f"{path.basename(caminho1)}/{path.basename(caminho1)}/prokka/"
+                 f"genome.ffn > {abricante_out} --threads {THREADS}")
+
+run_command_line(abricate_line)
+
 selected = get_abricate_result(abricante_out)
 select_imprimir = []
 
@@ -529,10 +553,13 @@ pathlib.Path(abricante_out).unlink(missing_ok=True)
 
 #########################################################################################################
 # Rodar abricate para PlasmidFinder
-abricante_out = f"{_bn(sample)}_outAbricatePlasmid"
-abricante_exe = " ".join([f"{_bn(caminho_abricate)}", "--db", "plasmidfinder",
-                         f"{_bn(caminho1)}/{_bn(sample)}/unicycler/assembly.fasta", ">", abricante_out, '--threads', THREADS])
-sp_runner(abricante_exe)
+abricante_out = f"{path.basename(sample)}_outAbricatePlasmid"
+abricate_line = (f"{path.basename(caminho_abricate)} --db plasmidfinder"
+                 f"{path.basename(caminho1)}/{path.basename(sample)}/unicycler"
+                 f"/assembly.fasta > {abricante_out} --threads {THREADS}")
+
+run_command_line(abricate_line)
+
 selected = get_abricate_result(abricante_out)
 select_imprimir = []
 
@@ -554,7 +581,7 @@ else:
             'COV_DB:' + lines_blast[6] + '|' + ' '
         select_imprimir.append(out_blast)
         imprimir += f"\n{lines_blast[5]}"
-gal_file.write(f"Plasmídeos encontrados:{_bn(imprimir)}\n")
+gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
 
 mongo_saver.save("plasmid", "<br>".join(select_imprimir))
 pathlib.Path(abricante_out).unlink(missing_ok=True)
@@ -563,20 +590,25 @@ pathlib.Path(abricante_out).unlink(missing_ok=True)
 
 print(f"Rodar o MLST {especie_mlst}")
 
-MLST_result = f"{_bn(caminho1)}/{_bn(sample)}/unicycler/data.json"
+MLST_result = f"{path.basename(
+    caminho1)}/{path.basename(sample)}/unicycler/data.json"
 # se nao tem mlst disponivel, ai tem que avisar
 if (especie_mlst == 'Nao disponivel') or (especie_mlst == ''):  # mod 26-08-22
     # print OUT2 "Nao disponivel\t";
     imprimir = 'Not available for this species'  # mod 26.08.22
     mongo_saver.save('mlst', imprimir)
     # para o gal
-    gal_file.write(f"Clone ST {_bn(imprimir)} (determinado por MLST)\n")
+    gal_file.write(f"Clone ST {path.basename(
+        imprimir)} (determinado por MLST)\n")
 else:
     # mod 26-08-22
-    docker = " ".join(['docker', 'run', '--rm', '-i', '-v', f"{_bn(mlst_install)}/mlst_db:/database", '-v',
-                      f"{_bn(caminho1)}/{_bn(sample)}/unicycler:/workdir", 'mlst', '-i', 'assembly.fasta', '-o', '.', '-s', f"{especie_mlst}"])
+    docker_line = (f"docker run --rm -i -v {path.basename(mlst_install)}/"
+                   "mlst_db:/database -v "
+                   f"{path.basename(caminho1)}/{path.basename(sample)}/"
+                   "unicycler:/workdir mlst -i assembly.fasta -o . "
+                   f"-s {especie_mlst}")
     # rodar o mlst
-    sp_runner(docker)
+    run_command_line(docker_line)
 # mod
 
 ST = None
@@ -598,7 +630,8 @@ with open(mlst_json, "r") as IN3:
         imprimir = ST
         mongo_saver.save('mlst', imprimir)
         # para o gal
-        gal_file.write(f"Clone ST {_bn(imprimir)} (determinado por MLST)\n")
+        gal_file.write(f"Clone ST {path.basename(
+            imprimir)} (determinado por MLST)\n")
     m = re.search(r'nearest_sts":\s"((\d*,)*\d*)".*', line, re.IGNORECASE)
     if m:
         nearest_sts = m.group(1)
@@ -608,7 +641,7 @@ with open(mlst_json, "r") as IN3:
             mongo_saver.save('mlst', imprimir)
             # para o gal
             gal_file.write(
-                f"Clone ST {_bn(imprimir)} (determinado por MLST)\n")
+                f"Clone ST {path.basename(imprimir)} (determinado por MLST)\n")
     m = re.search(r'.*sequence_type":\s"(Unknown)".*', line, re.IGNORECASE)
     if m:
         ST = m.group(1)
@@ -616,7 +649,8 @@ with open(mlst_json, "r") as IN3:
         imprimir = 'Unknown'
         mongo_saver.save('mlst', imprimir)
         # para o gal
-        gal_file.write(f"Clone ST {_bn(imprimir)} (determinado por MLST)\n")
+        gal_file.write(f"Clone ST {path.basename(
+            imprimir)} (determinado por MLST)\n")
 
 mongo_saver.save('mutacoes_poli', "<br>".join(result2))
 gal_file.write("Mutações polimixina: %s" % "<br>".join(result2))
@@ -627,26 +661,26 @@ print('rodar coverage')
 
 # figuring out if file is compressed or not
 catcmd = "cat"
-res = sp_runner(f"file {_bn(R1)}", pipeout=True)
+res = run_command_line(f"file {path.basename(R1)}")
 if res and str(res).find("gzip compressed") > -1:
     catcmd = "zcat"
 
-zcat = " ".join([f"echo $({catcmd} {_bn(R1)} | wc -l)/4 | bc"])
-res_r1 = sp_runner(zcat, pipeout=True)
-n_reads1 = res_r1.decode("utf-8").rstrip("\n")
+zcat = f"echo $({catcmd} {path.basename(R1)} | wc -l)/4 | bc"
+res_r1 = run_command_line(zcat)
+n_reads1 = res_r1.rstrip("\n")
 
 # o mesmo para o arquivo R2
-zcat2 = " ".join([f"echo $({catcmd} {_bn(R2)} | wc -l)/4 | bc"])
-res_r2 = sp_runner(zcat2, pipeout=True)
-n_reads2 = res_r2.decode("utf-8").rstrip("\n")
+zcat2 = f"echo $({catcmd} {path.basename(R2)} | wc -l)/4 | bc"
+res_r2 = run_command_line(zcat2)
+n_reads2 = res_r2.rstrip("\n")
 
 soma_reads = (float(n_reads1) + float(n_reads2))
 
 # calcular tamanho medio das reads, vou usar só as R1 como base
-zcat3 = " ".join(
-    [f"{catcmd} {_bn(R1)} | awk '{{if(NR%4==2) {{count++; bases += length}} }} END{{print bases/count}}'"])
-res_avg = sp_runner(zcat3, pipeout=True)
-average_length2 = res_avg.decode("utf-8").rstrip("\n")
+zcat3 = (f"{catcmd} {path.basename(R1)} | awk '{{if(NR%4==2) "
+         "{{count++; bases += length}} }} END{{print bases/count}}'")
+res_avg = run_command_line(zcat3)
+average_length2 = res_avg.rstrip("\n")
 
 gal_file.close()
 
