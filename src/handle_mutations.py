@@ -13,11 +13,21 @@ subject_sequence_pattern = re.compile(r"Sbjct\s+(\d+)\s+(\w+)\s+(\d+)", re.I)
 
 
 def find_mutation(blast_result_path: str, mutations: List[str]) -> List[str]:
+    """
+    Finds the requested mutations from a BLAST result.
+
+    Args:
+        blast_result_path (str): The BLAST result path.
+        mutations (List[str]): The list of mutations to find.
+
+    Returns:
+        List[str]: A list of the found mutations.
+    """
     try:
         with open(blast_result_path, "r") as infile:
             lines = [line.rstrip() for line in infile.readlines()]
     except FileNotFoundError:
-        raise FileNotFoundError(f"File {blast_result_path} not open")
+        raise FileNotFoundError(f"File {blast_result_path} not open.")
 
     sbjct = None
     sbjct_length = 0
@@ -100,6 +110,16 @@ def find_mutation(blast_result_path: str, mutations: List[str]) -> List[str]:
 
 def find_acineto_mutations(blast_result_path: str) -> Tuple[List[str],
                                                             List[str]]:
+    """
+    Finds the requested mutations for Acineto sp from a BLAST result.
+
+    Args:
+        blast_result_path (str): The BLAST result path.
+
+    Returns:
+        Tuple[List[str], List[str]]: A tuple with the lists of the found
+        mutations.
+    """
     other_mutations = ["GyrA", "GyrB", "ParC", "AdeN",
                        "AdeR", "CarO", "OmpA", "AdeL", "AdeS"]
     poli_mutations = ["PmrA", "PmrB", "LpxA", "LpxD", "LpxC"]
@@ -111,6 +131,16 @@ def find_acineto_mutations(blast_result_path: str) -> Tuple[List[str],
 
 def find_ecloacae_mutations(blast_result_path: str) -> Tuple[List[str],
                                                              List[str]]:
+    """
+    Finds the requested mutations for Enterobacter cloacae from a BLAST result.
+
+    Args:
+        blast_result_path (str): The BLAST result path.
+
+    Returns:
+        Tuple[List[str], List[str]]: A tuple with the lists of the found
+        mutations.
+    """
     other_mutations = ["GyrA", "ParC"]
     poli_mutations = ["PmrA", "PmrB", "MgrB", "PhoP", "PhoQ"]
 
@@ -121,6 +151,16 @@ def find_ecloacae_mutations(blast_result_path: str) -> Tuple[List[str],
 
 def find_kleb_mutations(blast_result_path: str) -> Tuple[List[str],
                                                          List[str]]:
+    """
+    Finds the requested mutations for Klebsiella sp from a BLAST result.
+
+    Args:
+        blast_result_path (str): The BLAST result path.
+
+    Returns:
+        Tuple[List[str], List[str]]: A tuple with the lists of the found
+        mutations.
+    """
     other_mutations = ["GyrA", "GyrB", "ParC", "AcrR", "RamR"]
     poli_mutations = ["PmrB", "PmrA", "MgrB", "PhoP", "PhoQ"]
 
@@ -131,6 +171,16 @@ def find_kleb_mutations(blast_result_path: str) -> Tuple[List[str],
 
 def find_pseudo_mutations(blast_result_path: str) -> Tuple[List[str],
                                                            List[str]]:
+    """
+    Finds the requested mutations for Pseudomonas sp from a BLAST result.
+
+    Args:
+        blast_result_path (str): The BLAST result path.
+
+    Returns:
+        Tuple[List[str], List[str]]: A tuple with the lists of the found
+        mutations.
+    """
     other_mutations = ["OprD", "MexT", "AmpC",
                        "AmpR", "GyrA", "GyrB", "ParC", "ParE"]
     poli_mutations = ["PmrA", "PmrB", "PhoQ",

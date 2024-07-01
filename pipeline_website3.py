@@ -7,7 +7,8 @@ import shutil
 import pathlib
 from os import path, makedirs
 from src.handle_programs import run_command_line
-from src.handle_processing import run_blast_and_check_mutations, BacteriaDict
+from src.handle_processing import run_blast_and_check_mutations, \
+    BacteriaDict, get_abricate_result
 from libs.tools import count_kraken_words, MongoSaver
 
 
@@ -427,44 +428,6 @@ abricate_line = (f"{path.basename(caminho_abricate)} --db resfinder "
                  f"{path.basename(caminho1)}/{path.basename(sample)}/prokka"
                  f"/genome.ffn > {abricante_out} --threads {THREADS}")
 run_command_line(abricate_line)
-
-def get_abricate_result(file_path_):
-    """
-    Processes a abricate result and returns only lines with identity > 90 and coverage > 90.
-    
-    Args:
-        file_path (str): The path to abricate result, a tab-delimited file.
-    
-    Returns:
-        list: A list specif lines from the file.
-    """
-    results = []
-    
-    try:
-        with open(file_path, 'r') as file:
-            for line in file:
-                # Split the line by tabs
-                fields = line.strip().split('\t')
-                
-                # Check the specific data
-                coverage = fields[9]
-                identity= fields[10]
-                gene= fields[5]
-                
-                # filter line results
-                if coverage > 90 and identity > 90:
-                    # Add the lines selected to the results list
-                    results.append(line)
-
-                elif re.match(r'Van.*', gene, re.I):
-                    results.append(line)
-
-    except FileNotFoundError:
-        print(f"Error: The file at {file_path} was not found.")
-    except Exception as e:
-        print(f"Error: {e}")
-    
-    return results
 
 selected = get_abricate_result(abricante_out)
 select_imprimir = []

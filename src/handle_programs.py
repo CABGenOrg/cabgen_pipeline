@@ -7,6 +7,9 @@ def run_command_line(command_line: str) -> str:
 
     Args:
         command_line (str): Command to be executed.
+
+    Returns:
+        str: Command line output.
     """
     if not command_line:
         raise ValueError("The command_line argument cannot be empty.")
