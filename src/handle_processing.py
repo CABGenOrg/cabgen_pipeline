@@ -1,8 +1,8 @@
 import re
-from handle_programs import run_blastx
 from typing import TypedDict, List, Tuple
-from handle_mutations import find_acineto_mutations, find_ecloacae_mutations, \
-    find_kleb_mutations, find_pseudo_mutations
+from src.handle_programs import run_blastx
+from src.handle_mutations import find_acineto_mutations, \
+    find_ecloacae_mutations, find_kleb_mutations, find_pseudo_mutations
 
 choose_analysis = {"pseudomonasaeruginosa": find_pseudo_mutations,
                    "klebsiellapneumoniae": find_kleb_mutations,
