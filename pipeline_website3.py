@@ -9,7 +9,7 @@ from os import path, makedirs
 from src.handle_programs import run_command_line
 from src.handle_processing import run_blast_and_check_mutations, \
     BacteriaDict, get_abricate_result, count_kraken_words
-from libs.tools import MongoSaver
+from src.MongoDB.py import MongoSaver
 
 
 sys.path[0:0] = ['/opt/pipeline/lib/']
