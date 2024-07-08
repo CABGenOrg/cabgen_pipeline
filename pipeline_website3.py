@@ -6,10 +6,10 @@ import sys
 import shutil
 import pathlib
 from os import path, makedirs
+from src.handle_database import MongoSaver
 from src.handle_programs import run_command_line
 from src.handle_processing import run_blast_and_check_mutations, \
     BacteriaDict, get_abricate_result, count_kraken_words
-from src.MongoDB.py import MongoSaver
 
 
 sys.path[0:0] = ['/opt/pipeline/lib/']
@@ -99,8 +99,8 @@ print(f"unicycler: {path.basename(unicycler)} ")
 R1 = sys.argv[10]
 R2 = sys.argv[11]
 
-mongo_saver = MongoSaver(caminho_output, sample2)  # mongodb instance saver
-
+mongo_client = MongoSaver(int(sample2))
+mongo_client.connect()
 ##################################################
 # rodar unicycler
 unicycler_line = (f"unicycler -1 {path.basename(R1)} -2 {path.basename(R2)} "
@@ -184,13 +184,13 @@ with open(f"checkM_bins/{path.basename(sample)}_resultados") as IN_check:
         # printar na tabela OUTPUT as informacoes de qualidade que interessam EXCLUSIVO TABELA OUTPUT
         # print OUT2 "$lines[5]\t$lines[6]\t$lines[8]\t";
         genome_size = lines[8]
-        mongo_saver.save('checkm_1', lines[5])  # completeness
-        mongo_saver.save('checkm_2', lines[6])  # contamination
-        mongo_saver.save('checkm_3', lines[8])  # genome size
-        mongo_saver.save('checkm_4', lines[11])  # contigs
+        mongo_client.save('checkm_1', lines[5])  # completeness
+        mongo_client.save('checkm_2', lines[6])  # contamination
+        mongo_client.save('checkm_3', lines[8])  # genome size
+        mongo_client.save('checkm_4', lines[11])  # contigs
         contaminacao = lines[6]
 
-mongo_saver.save('sample', sample)
+mongo_client.save('sample', sample)
 #########################################################################################################################
 # Identificar especie usando o kraken
 
@@ -399,7 +399,7 @@ print('contaminacao...')
 # printar no arquivo final o nome da especie
 if float(contaminacao) <= 10.:
     # print OUT2 "$printar_especies\t";
-    mongo_saver.save('especie', printar_especies)
+    mongo_client.save('especie', printar_especies)
     # para o gal
     gal_file.write(f"Espécie identificada: {
                    path.basename(printar_especies)}\n")
@@ -407,7 +407,7 @@ else:
     # print OUT2 "$printar_especies\t";
     imprimir = f"{maior_repeticao} {path.basename(repeticoes[0][1])} {segunda_repeticao} {
         path.basename(repeticoes[1][1])}"
-    mongo_saver.save('especie', imprimir)
+    mongo_client.save('especie', imprimir)
     # para o gal
     gal_file.write(f"Espécie: CONTAMINAÇÃO {path.basename(imprimir)}\n")
 
@@ -519,8 +519,8 @@ for n_l in selected:
 
 # imprimir resultados com a classe do antimicrobiano
 
-mongo_saver.save("gene", "<br>".join(genes))
-mongo_saver.save("resfinder", "<br>".join(select_imprimir))
+mongo_client.save("gene", "<br>".join(genes))
+mongo_client.save("resfinder", "<br>".join(select_imprimir))
 
 ################################################################################################
 # Rodar abricate para VFDB (Virulence factor)
@@ -544,7 +544,7 @@ for n_l in selected:
         lines_blast[10]} COV_Q:{lines_blast[9]} COV_DB:{lines_blast[6]}| "
     select_imprimir.append(out_blast)
 
-mongo_saver.save('VFDB', "<br>".join(select_imprimir))
+mongo_client.save('VFDB', "<br>".join(select_imprimir))
 pathlib.Path(abricante_out).unlink(missing_ok=True)
 
 #########################################################################################################
@@ -563,7 +563,7 @@ select_imprimir = []
 imprimir = 'Not found'
 if not selected:
     # print OUT2 "Nao encontrado\t";
-    mongo_saver.save('plasmid', imprimir)
+    mongo_client.save('plasmid', imprimir)
     # para o gal
 else:
     imprimir = ""
@@ -579,7 +579,7 @@ else:
         imprimir += f"\n{lines_blast[5]}"
 gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
 
-mongo_saver.save("plasmid", "<br>".join(select_imprimir))
+mongo_client.save("plasmid", "<br>".join(select_imprimir))
 pathlib.Path(abricante_out).unlink(missing_ok=True)
 
 ################################################################################################
@@ -592,7 +592,7 @@ MLST_result = f"{path.basename(
 if (especie_mlst == 'Nao disponivel') or (especie_mlst == ''):  # mod 26-08-22
     # print OUT2 "Nao disponivel\t";
     imprimir = 'Not available for this species'  # mod 26.08.22
-    mongo_saver.save('mlst', imprimir)
+    mongo_client.save('mlst', imprimir)
     # para o gal
     gal_file.write(f"Clone ST {path.basename(
         imprimir)} (determinado por MLST)\n")
@@ -624,7 +624,7 @@ with open(mlst_json, "r") as IN3:
         ST = m.group(1)
         # print OUT2 "$ST\t";
         imprimir = ST
-        mongo_saver.save('mlst', imprimir)
+        mongo_client.save('mlst', imprimir)
         # para o gal
         gal_file.write(f"Clone ST {path.basename(
             imprimir)} (determinado por MLST)\n")
@@ -634,7 +634,7 @@ with open(mlst_json, "r") as IN3:
         if nearest_sts:
             # print OUT2 "Nearest $nearest_sts\t";
             imprimir = f"Nearest {nearest_sts}"
-            mongo_saver.save('mlst', imprimir)
+            mongo_client.save('mlst', imprimir)
             # para o gal
             gal_file.write(
                 f"Clone ST {path.basename(imprimir)} (determinado por MLST)\n")
@@ -643,14 +643,14 @@ with open(mlst_json, "r") as IN3:
         ST = m.group(1)
         # print OUT2 "Unknown\t";
         imprimir = 'Unknown'
-        mongo_saver.save('mlst', imprimir)
+        mongo_client.save('mlst', imprimir)
         # para o gal
         gal_file.write(f"Clone ST {path.basename(
             imprimir)} (determinado por MLST)\n")
 
-mongo_saver.save('mutacoes_poli', "<br>".join(result2))
+mongo_client.save('mutacoes_poli', "<br>".join(result2))
 gal_file.write("Mutações polimixina: %s" % "<br>".join(result2))
-mongo_saver.save('mutacoes_outras', "<br>".join(result3))
+mongo_client.save('mutacoes_outras', "<br>".join(result3))
 
 ######################################################################
 print('rodar coverage')
@@ -682,4 +682,4 @@ gal_file.close()
 
 coverage = (float(average_length2) * soma_reads) / float(genome_size)
 
-mongo_saver.save('coverage', coverage)
+mongo_client.save('coverage', str(coverage))
