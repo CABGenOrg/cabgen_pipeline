@@ -1,6 +1,7 @@
 import re
 from typing import TypedDict, List, Tuple
 from src.handle_programs import run_blastx
+from collections import Counter
 from src.handle_mutations import find_acineto_mutations, \
     find_ecloacae_mutations, find_kleb_mutations, find_pseudo_mutations
 
@@ -96,3 +97,30 @@ def get_abricate_result(file_path: str):
             results.append(line)
 
     return results
+
+
+def count_kraken_words(kraken_output: str) -> Tuple[str, str]:
+    """
+    Processes Kraken result file and returns the two most common identified
+    bacteria species.
+
+    Args:
+        kraken_output (str): The path to the Kraken result file.
+
+    Returns:
+        Tuple[str, str]: A tuple of the two most common bacteria species.
+    """
+    try:
+        with open(kraken_output) as infile:
+            lines = [line.split("\t")[2].split("(")[0].strip()
+                     for line in infile.readlines()
+                     if len(line.split("\t")) >= 3]
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File {kraken_output} not found")
+
+    most_commom_species = Counter(lines).most_common(2)
+    first_most_commom = most_commom_species[0][0].replace(" ", "")
+    second_most_commom = most_commom_species[1][0].replace(" ", "")
+
+    return first_most_commom, second_most_commom

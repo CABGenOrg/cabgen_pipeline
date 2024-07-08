@@ -8,8 +8,8 @@ import pathlib
 from os import path, makedirs
 from src.handle_programs import run_command_line
 from src.handle_processing import run_blast_and_check_mutations, \
-    BacteriaDict, get_abricate_result
-from libs.tools import count_kraken_words, MongoSaver
+    BacteriaDict, get_abricate_result, count_kraken_words
+from libs.tools import MongoSaver
 
 
 sys.path[0:0] = ['/opt/pipeline/lib/']
@@ -208,12 +208,7 @@ splitter_line = (f"split --numeric-suffixes=1 -n l/{THREADS} "
                  f"out_kraken {preffix}")
 run_command_line(splitter_line)
 
-ordenado = count_kraken_words(int(THREADS), preffix)
-
-# contar qts vezes aparece cada especie
-repeticoes = ordenado.most_common(2)
-maior_repeticao = repeticoes[0][0]
-segunda_repeticao = repeticoes[1][0]
+maior_repeticao, segunda_repeticao = count_kraken_words("out_kraken")
 
 # print "$maior_repeticao\n$segunda_repeticao\n";
 
