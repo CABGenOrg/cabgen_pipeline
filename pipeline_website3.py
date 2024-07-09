@@ -39,11 +39,23 @@ THREADS = "16"  # new one will have 32
 sys.argv = sys.argv[1:]  # dict(perllib.Array(sys.argv)[1:])
 # use alinhamento_poli_truncation;
 
-# Linha de comando do script perl pipeline_melise_output_gal.pl  <caminho do diretorio Output, com resultados de spades/unicycler e prokka ex:/home/melise/Output_run18-06.02.21> <nome da amostra na pasta Output ex:27563_S12> <caminho onde esta instalado o abricate  ex:./abricate/bin/abricate>
-# <arquivo da tabela excel formato .xls onde vão ser impressos os resultados> <diretorio onde esta instalado o kmer-db  ex:/home/melise/kmer-db>  <caminho do diretorio onde esta instalado o mlst ex:/home/melise/identificar_clones> <caminho do DB com as seqs de ptn de resistencia mutacional a
-# polimixina ex:/home/melise/resis_poli> <caminho do DB com as seqs de ptn de resistencia mutacional a outros antibioticos ex:/home/melise/outrasMut> <caminho kraken ex:kraken> <caminho unicycle ex:unicycler> <caminho R1> <caminho R2>
+"""
+Linha de comando do script perl pipeline_melise_output_gal.pl  <caminho do
+diretorio Output, com resultados de spades/unicycler e prokka
+ex:/home/melise/Output_run18-06.02.21> <nome da amostra na pasta Output
+ex:27563_S12> <caminho onde esta instalado o abricate
+ex:./abricate/bin/abricate> <arquivo da tabela excel formato .xls onde vão ser
+impressos os resultados> <diretorio onde esta instalado o kmer-db
+ex:/home/melise/kmer-db> <caminho do diretorio onde esta instalado o mlst
+ex:/home/melise/identificar_clones> <caminho do DB com as seqs de ptn de
+resistencia mutacional a polimixina ex:/home/melise/resis_poli> <caminho do DB
+com as seqs de ptn de resistencia mutacional a outros antibioticos
+ex:/home/melise/outrasMut> <caminho kraken ex:kraken> <caminho unicycle
+ex:unicycler> <caminho R1> <caminho R2>
+"""
 
-# Guardar o caminho do diretorio "Output", com o resultado da montagem, anotacao e blast para todas as amostra. ex /home/melise/Output
+# Guardar o caminho do diretorio "Output", com o resultado da montagem,
+# anotacao e blast para todas as amostra. ex /home/melise/Output
 caminho1 = sys.argv[0]
 
 # Guardar o nome da amostra com o _S*
@@ -64,17 +76,20 @@ caminho_abricate = sys.argv[2]
 # MELISE: ISSO É USADO AGORA PARA SALVAR OS DADOS PARA O MONGODB, CERTO?
 caminho_output = sys.argv[3]
 
-# entrar com o caminho da pastar onde esta instalado o kmer-db  /home/melise/kmer-db
+# entrar com o caminho da pastar onde esta instalado o kmer-db
+# /home/melise/kmer-db
 # MELISE: NAO USAMOS MAIS O KMER-DB
 kmerdb_install = sys.argv[4]
 
-# entrar com o caminho da pastar onde esta instalado o mlst. ex: /home/melise/identificar_clones
+# entrar com o caminho da pastar onde esta instalado o mlst.
+# ex: /home/melise/identificar_clones
 mlst_install = sys.argv[5]
 
 # Caminho para banco de dados com sequências de genes de R a polimixina
 db_polimixina = sys.argv[6]
 
-# Caminho para banco de dados com sequências de genes de R mutacionais a outros antibioticos
+# Caminho para banco de dados com sequências de genes de R mutacionais a
+# outros antibioticos
 db_outrosMut = sys.argv[7]
 
 # entrar com o caminho da pastar onde esta instalado o kraken2 ex: kraken2
@@ -125,24 +140,25 @@ run_command_line(prokka_line)
 # EXCLUSIVO DO PIPELINE OUTPUT
 
 # variavel para guardar os tipos de resultados que devem ser indicados
-# ex: checkm; especie; contigs; resfinder; VFDB; plasmid; mlst; mutacoes_poli; mutacoes_outra
+# ex: checkm; especie; contigs; resfinder; VFDB; plasmid; mlst; mutacoes_poli;
+# mutacoes_outra
 
 tipo_de_resultado = None
 # o que imprimir desse resultado
 imprimir = None
 
-#####################################################################################
+###############################################################################
 # PARA IMPRIMIR O RESULTADO EM UM ARQUIVO TXT PARA GAL
 
 gal_file = open('resultado_gal.txt', mode="a", encoding='utf-8')
-# MELISE: ESTA USANDO ESSE ARQUIVO PARA O MONGODB? PORQUE O PIPELINE NAO PRECISA DELE
+# MELISE: ESTA USANDO ESSE ARQUIVO PARA O MONGODB? PORQUE O PIPELINE NAO
+# PRECISA DELE
 
 # printar no arquivo final o nome da amostra na primeira linha
-gal_file.write(
-    f"\nAmostra {path.basename(sample)}\nResultados relevantes do sequenciamento do genoma total (WGS):\n")
+gal_file.write((f"\nAmostra {path.basename(sample)}\nResultados relevantes do "
+                "sequenciamento do genoma total (WGS):\n"))
 
-
-#####################################################################################
+###############################################################################
 # Rodar o CheckM para saber qualidade da corrida
 # Copiar o arquivo assembly.fasta para a pasta do CheckM checkM_bins
 makedirs("checkM_bins", exist_ok=True)
@@ -181,7 +197,8 @@ with open(f"checkM_bins/{path.basename(sample)}_resultados") as IN_check:
         # separar as colunas do arquivo em elementos em um array
         lines = row.split("\t")
         # print "$lines[2]\n";
-        # printar na tabela OUTPUT as informacoes de qualidade que interessam EXCLUSIVO TABELA OUTPUT
+        # printar na tabela OUTPUT as informacoes de qualidade que interessam
+        # EXCLUSIVO TABELA OUTPUT
         # print OUT2 "$lines[5]\t$lines[6]\t$lines[8]\t";
         genome_size = lines[8]
         mongo_client.save('checkm_1', lines[5])  # completeness
@@ -191,7 +208,7 @@ with open(f"checkM_bins/{path.basename(sample)}_resultados") as IN_check:
         contaminacao = lines[6]
 
 mongo_client.save('sample', sample)
-#########################################################################################################################
+###############################################################################
 # Identificar especie usando o kraken
 
 print('rodar o kraken')
@@ -221,12 +238,14 @@ check_especies = maior_repeticao
 # system(@rm2) == 0
 #        or die "system @rm2 failes: $?";
 
-# colocar só o genero e a especie, descartando qualquer outra informação dessa coluna do kraken
+# colocar só o genero e a especie, descartando qualquer outra informação dessa
+# coluna do kraken
 identificar_especie = ''  # mod 11.05.22
 genero = ''  # mod 11.05.22
 especie = ''  # mod 11.05.22
 # juntar genero e especie para mlst
-# resultado_final_especie = ''  # mod 11.05.22 MELISE: ESSA LINHA NAO ESTA SILENCIADA NO SCRIT PERL
+# resultado_final_especie = ''  # mod 11.05.22 MELISE: ESSA LINHA NAO ESTA
+# SILENCIADA NO SCRIT PERL
 # resultado que sera impresso
 printar_especies = ''  # mod 11.05.22
 # o que usar para mlst
@@ -236,8 +255,10 @@ if (re.findall(re.compile(r'\w+\s\w+', re.I), check_especies)):  # mod 11.05.22
     check_especies = check_especies.strip()
     genero, especie = check_especies.split(" ")
     # print "$genero\n$especie\n";
-    # Associar o nome da especie ao banco do mlst e gravar o nome que sera dado como resultado final
-    # resultado_final_especie = f"{genero}{especie}" #MELISE: ESSA LINHA NAO ESTA SILENCIADA NO SCRIT PERL
+    # Associar o nome da especie ao banco do mlst e gravar o nome que sera dado
+    # como resultado final
+    # resultado_final_especie = f"{genero}{especie}" #MELISE: ESSA LINHA NAO
+    # ESTA SILENCIADA NO SCRIT PERL
     # $printar_especies = $resultado_final_especie;
     # $especie_mlst = "";
 else:
@@ -245,7 +266,7 @@ else:
     genero = check_especies  # MELISE: ESSA LINHA NAO EXISTIA NO SCRIPT EM PERL
 # mod ate aqui 20.05.22
 
-#######################################################################################################################
+###############################################################################
 # Sequencia para verificar mutacoes pontuais usando subrotinas proprias
 
 # guardar o resultado das mutacoes para polimixina
@@ -297,13 +318,24 @@ elif resultado_final_especie == 'klebsiellaoxytoca':
 elif resultado_final_especie == 'enterococcusfaecium':
     especie_mlst = 'efaecium'
     printar_especies = 'Enterococcus faecium'
-elif re.match(r"acinetobacter.*", resultado_final_especie, re.I):  # MELISE: ADICIONEI
-    especie_mlst = 'abaumannii_2'  # MELISE: ADICIONEI
-elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii', "acinetobacternosocomialis",
-                                 "acinetobacterpittii", "acinetobacterseifertii", "acinetobacterdijkshoorniae",
-                                 "acinetobacterlactucae", "acinetobactercalcoaceticus",
-                                 "enterobactercloacae", "enterobacterhormaechei", "enterobacterasburiae",
-                                 "enterobacterkobei", "enterobacterroggenkampii", "enterobacterludwigii"):
+# MELISE: ADICIONEI
+elif re.match(r"acinetobacter.*", resultado_final_especie, re.I):
+    # MELISE: ADICIONEI
+    especie_mlst = 'abaumannii_2'
+elif resultado_final_especie in ('klebsiellapneumoniae',
+                                 'acinetobacterbaumannii',
+                                 "acinetobacternosocomialis",
+                                 "acinetobacterpittii",
+                                 "acinetobacterseifertii",
+                                 "acinetobacterdijkshoorniae",
+                                 "acinetobacterlactucae",
+                                 "acinetobactercalcoaceticus",
+                                 "enterobactercloacae",
+                                 "enterobacterhormaechei",
+                                 "enterobacterasburiae",
+                                 "enterobacterkobei",
+                                 "enterobacterroggenkampii",
+                                 "enterobacterludwigii"):
     lista = ""
     fastANI_txt = "Para FastANI"
     if resultado_final_especie == 'klebsiellapneumoniae':
@@ -324,13 +356,21 @@ elif resultado_final_especie in ('klebsiellapneumoniae', 'acinetobacterbaumannii
 
         result3, result2 = run_blast_and_check_mutations(bacteria_dict)
         lista = '/opt/genomas_enterobacter/kleb_database/lista-kleb'
-    elif resultado_final_especie in ("acinetobacterbaumannii", "acinetobacternosocomialis",
-                                     "acinetobacterpittii", "acinetobacterseifertii", "acinetobacterdijkshoorniae",
-                                     "acinetobacterlactucae", "acinetobactercalcoaceticus"):
+    elif resultado_final_especie in ("acinetobacterbaumannii",
+                                     "acinetobacternosocomialis",
+                                     "acinetobacterpittii",
+                                     "acinetobacterseifertii",
+                                     "acinetobacterdijkshoorniae",
+                                     "acinetobacterlactucae",
+                                     "acinetobactercalcoaceticus"):
         # $printar_especies = "Acinetobacter baumannii";
         lista = '/opt/genomas_enterobacter/fastANI_acineto/list-acineto'
-    elif resultado_final_especie in ("enterobactercloacae", "enterobacterhormaechei", "enterobacterasburiae",
-                                     "enterobacterkobei", "enterobacterroggenkampii", "enterobacterludwigii"):
+    elif resultado_final_especie in ("enterobactercloacae",
+                                     "enterobacterhormaechei",
+                                     "enterobacterasburiae",
+                                     "enterobacterkobei",
+                                     "enterobacterroggenkampii",
+                                     "enterobacterludwigii"):
         especie_mlst = "ecloacae"
         lista = '/opt/genomas_enterobacter/fastANI/list_entero'
         fastANI_txt = 'Rodar fastANI para subespecie'
@@ -405,17 +445,18 @@ if float(contaminacao) <= 10.:
                    path.basename(printar_especies)}\n")
 else:
     # print OUT2 "$printar_especies\t";
-    imprimir = f"{maior_repeticao} {path.basename(repeticoes[0][1])} {segunda_repeticao} {
-        path.basename(repeticoes[1][1])}"
+    imprimir = (f"{maior_repeticao} {path.basename(repeticoes[0][1])} "
+                f"{segunda_repeticao} {path.basename(repeticoes[1][1])}")
     mongo_client.save('especie', imprimir)
     # para o gal
     gal_file.write(f"Espécie: CONTAMINAÇÃO {path.basename(imprimir)}\n")
 
 # else {
-#        	print OUT2 "$maior_repeticao $count_ordenado2{$maior_repeticao} $segunda_repeticao $count_ordenado2{$segunda_repeticao}\t";
+#        	print OUT2 "$maior_repeticao $count_ordenado2{$maior_repeticao}
+# $segunda_repeticao $count_ordenado2{$segunda_repeticao}\t";
 # }
 
-###############################################################################################
+###############################################################################
 # Rodar ABRICATE
 # Para resistencia usando o ResFinder (porque so tem resistencia adquirida)
 abricante_out = f"{path.basename(sample)}_outAbricateRes"
@@ -433,7 +474,8 @@ genes = []
 # print gal
 gal_file.write('Genes de resistência encontrados no WGS:\n')
 
-# MELISE: ADICIONEI NAS LINHAS DE genes.append "(allele confidence" + lines_blast[10] + ")")
+# MELISE: ADICIONEI NAS LINHAS DE genes.append "(allele confidence" +
+# lines_blast[10] + ")")
 for n_l in selected:
     # print "$n\n";
     # separar as colunas do arquivo em elementos de um array
@@ -456,9 +498,11 @@ for n_l in selected:
         genes.append(lines_blast[5] + " (ESBL)" +
                      "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r"(aac\(6\'\)-Ib-cr).*", lines_blast[5], re.I):
-        # print OUT2 "$lines_blast[5] (resistencia a aminoglicosídeos e fluoroquinolonas)\n";
-        genes.append(
-            f"{lines_blast[5]} (resistance to aminoglycosides and fluoroquinolones)" + "(allele confidence" + lines_blast[10] + ")")
+        # print OUT2 "$lines_blast[5] (resistencia a aminoglicosídeos e
+        # fluoroquinolonas)\n";
+        genes.append(f"{lines_blast[5]} (resistance to aminoglycosides and"
+                     " fluoroquinolones) (allele confidence"
+                     f"lines_blast[10])")
     elif re.match(r'(aph|aac|rmt|aad).*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a aminoglicosídeos)\n";
         genes.append(f"{lines_blast[5]} (resistance to aminoglycosides)" +
@@ -488,9 +532,11 @@ for n_l in selected:
         genes.append(f"{lines_blast[5]} (resistance to eritromicina)" +
                      "(allele confidence" + lines_blast[10] + ")")
     elif re.match(r'erm.*', lines_blast[5], re.I):
-        # print OUT2 "$lines_blast[5] (resistencia a lincosamidas, macrolideos e estreptograminas)\n";
-        genes.append(
-            f"{lines_blast[5]} (resistance to lincosamides, macrolides and streptogramins)" + "(allele confidence" + lines_blast[10] + ")")
+        # print OUT2 "$lines_blast[5] (resistencia a lincosamidas, macrolideos
+        # e estreptograminas)\n";
+        genes.append(f"{lines_blast[5]} (resistance to lincosamides, "
+                     "macrolides and streptogramins) (allele confidence"
+                     f"{lines_blast[10]})")
     elif re.match(r'ARR.*', lines_blast[5], re.I):
         # print OUT2 "$lines_blast[5] (resistencia a rifampicina)\n";
         genes.append(f"{lines_blast[5]} (resistance to rifampicin)" +
@@ -522,7 +568,7 @@ for n_l in selected:
 mongo_client.save("gene", "<br>".join(genes))
 mongo_client.save("resfinder", "<br>".join(select_imprimir))
 
-################################################################################################
+###############################################################################
 # Rodar abricate para VFDB (Virulence factor)
 abricante_out = f"{path.basename(sample)}_outAbricateVFDB"
 abricate_line = (f"{path.basename(caminho_abricate)} --db vfdb "
@@ -539,7 +585,8 @@ for n_l in selected:
     # print "$n\n";
     # separar as colunas do arquivo em elementos de um array
     lines_blast = n_l.split("\t")
-    # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9] COV_DB:$lines_blast[6]\|";
+    # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
+    # COV_DB:$lines_blast[6]\|";
     out_blast = f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} ID:{
         lines_blast[10]} COV_Q:{lines_blast[9]} COV_DB:{lines_blast[6]}| "
     select_imprimir.append(out_blast)
@@ -547,7 +594,7 @@ for n_l in selected:
 mongo_client.save('VFDB', "<br>".join(select_imprimir))
 pathlib.Path(abricante_out).unlink(missing_ok=True)
 
-#########################################################################################################
+###############################################################################
 # Rodar abricate para PlasmidFinder
 abricante_out = f"{path.basename(sample)}_outAbricatePlasmid"
 abricate_line = (f"{path.basename(caminho_abricate)} --db plasmidfinder"
@@ -571,7 +618,8 @@ else:
         # print "$n\n";
         # separar as colunas do arquivo em elementos de um array
         lines_blast = n_l.split("\t")
-        # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9] COV_DB:$lines_blast[6]\|";
+        # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
+        # COV_DB:$lines_blast[6]\|";
         out_blast = lines_blast[5] + 'ID' + ':' + lines_blast[10] + ' ' + \
             'COV_Q:' + lines_blast[9] + ' ' + \
             'COV_DB:' + lines_blast[6] + '|' + ' '
@@ -582,7 +630,7 @@ gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
 mongo_client.save("plasmid", "<br>".join(select_imprimir))
 pathlib.Path(abricante_out).unlink(missing_ok=True)
 
-################################################################################################
+###############################################################################
 
 print(f"Rodar o MLST {especie_mlst}")
 
