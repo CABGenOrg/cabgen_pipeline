@@ -121,6 +121,8 @@ def count_kraken_words(kraken_output: str) -> Tuple[str, str]:
 
     most_commom_species = Counter(lines).most_common(2)
     first_most_commom = most_commom_species[0][0].replace(" ", "")
+    first_count = most_common_species[0][1]
     second_most_commom = most_commom_species[1][0].replace(" ", "")
+    second_count = most_common_species[1][1]
 
-    return first_most_commom, second_most_commom
+    return first_most_commom, second_most_commom, first_count, second_count
