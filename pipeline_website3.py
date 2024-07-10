@@ -225,7 +225,7 @@ splitter_line = (f"split --numeric-suffixes=1 -n l/{THREADS} "
                  f"out_kraken {preffix}")
 run_command_line(splitter_line)
 
-maior_repeticao, segunda_repeticao = count_kraken_words("out_kraken")
+maior_repeticao, segunda_repeticao, first_count, second_count = count_kraken_words("out_kraken")
 
 # print "$maior_repeticao\n$segunda_repeticao\n";
 
@@ -445,8 +445,8 @@ if float(contaminacao) <= 10.:
                    path.basename(printar_especies)}\n")
 else:
     # print OUT2 "$printar_especies\t";
-    imprimir = (f"{maior_repeticao} {path.basename(repeticoes[0][1])} "
-                f"{segunda_repeticao} {path.basename(repeticoes[1][1])}")
+    imprimir = (f"{maior_repeticao} {first_count} "
+                f"{segunda_repeticao} {second_count}")
     mongo_client.save('especie', imprimir)
     # para o gal
     gal_file.write(f"Espécie: CONTAMINAÇÃO {path.basename(imprimir)}\n")
