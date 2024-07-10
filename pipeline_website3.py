@@ -127,8 +127,7 @@ run_command_line(unicycler_line)
 
 # arquivo assembly.fasta da amostra
 
-montagem = f"{path.basename(
-    caminho1)}/{path.basename(sample)}/unicycler/assembly.fasta"
+montagem = f"{path.basename(caminho1)}/{path.basename(sample)}/unicycler/assembly.fasta"
 
 ###############################################################################
 # rodar prokka
@@ -282,8 +281,7 @@ print(f"resultado_final_especie: {resultado_final_especie}")
 if resultado_final_especie == 'pseudomonasaeruginosa':
     especie_mlst = 'paeruginosa'
     printar_especies = 'Pseudomonas aeruginosa'
-    fasta_polimixina = f"{path.basename(
-        db_polimixina)}/proteins_pseudo_poli.fasta"
+    fasta_polimixina = f"{path.basename(db_polimixina)}/proteins_pseudo_poli.fasta"
 
     bacteria_dict: BacteriaDict = {"species": resultado_final_especie,
                                    "assembly_file": montagem,
@@ -341,10 +339,8 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
     if resultado_final_especie == 'klebsiellapneumoniae':
         especie_mlst = 'kpneumoniae'
         # $printar_especies = "Klebsiella pneumoniae";
-        fasta_polimixina = f"{path.basename(
-            db_polimixina)}/proteins_kleb_poli.fasta"
-        fasta_outros = f"{path.basename(
-            db_outrosMut)}/proteins_outrasMut_kleb.fasta"
+        fasta_polimixina = f"{path.basename(db_polimixina)}/proteins_kleb_poli.fasta"
+        fasta_outros = f"{path.basename(db_outrosMut)}/proteins_outrasMut_kleb.fasta"
 
         bacteria_dict: BacteriaDict = {"species": resultado_final_especie,
                                        "assembly_file": montagem,
@@ -396,10 +392,8 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
         printar_especies = identificacao[0]
 
     if 'Enterobacter_cloacae_subsp_cloacae' == printar_especies:
-        fasta_polimixina = f"{path.basename(
-            db_polimixina)}/proteins_Ecloacae_poli.fasta"
-        fasta_outros = f"{path.basename(
-            db_outrosMut)}/proteins_outrasMut_Ecloacae.fasta"
+        fasta_polimixina = f"{path.basename(db_polimixina)}/proteins_Ecloacae_poli.fasta"
+        fasta_outros = f"{path.basename(db_outrosMut)}/proteins_outrasMut_Ecloacae.fasta"
 
         bacteria_dict: BacteriaDict = {"species": printar_especies,
                                        "assembly_file": montagem,
@@ -412,10 +406,8 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
         result3, result2 = run_blast_and_check_mutations(bacteria_dict)
 
     if 'Acinetobacter_baumannii' in printar_especies:
-        fasta_polimixina = f"{path.basename(
-            db_polimixina)}/proteins_acineto_poli.fasta"
-        fasta_outros = f"{path.basename(
-            db_outrosMut)}/proteins_outrasMut_acineto.fasta"
+        fasta_polimixina = f"{path.basename(db_polimixina)}/proteins_acineto_poli.fasta"
+        fasta_outros = f"{path.basename(db_outrosMut)}/proteins_outrasMut_acineto.fasta"
 
         bacteria_dict: BacteriaDict = {"species": printar_especies,
                                        "assembly_file": montagem,
@@ -441,8 +433,7 @@ if float(contaminacao) <= 10.:
     # print OUT2 "$printar_especies\t";
     mongo_client.save('especie', printar_especies)
     # para o gal
-    gal_file.write(f"Espécie identificada: {
-                   path.basename(printar_especies)}\n")
+    gal_file.write(f"Espécie identificada: {path.basename(printar_especies)}\n")
 else:
     # print OUT2 "$printar_especies\t";
     imprimir = (f"{maior_repeticao} {first_count} "
@@ -481,8 +472,7 @@ for n_l in selected:
     # separar as colunas do arquivo em elementos de um array
     lines_blast = n_l.split("\t")
     # concatenar os resultado
-    out_blast = f"{lines_blast[5]} (ID:{lines_blast[10]} COV_Q:{
-        lines_blast[9]} COV_DB:{lines_blast[6]})"
+    out_blast = f"{lines_blast[5]} (ID:{lines_blast[10]} COV_Q:{lines_blast[9]} COV_DB:{lines_blast[6]})"
     select_imprimir.append(out_blast)
     # imprimir no arquivo do gal
     if re.match(r'.*(blaKPC|blaNDM|blaVIM|blaIMP|blaSPM|blaOXA-23|blaOXA-24|blaOXA-25|blaOXA-26|blaOXA-27|blaOXA-48|blaOXA-58|blaOXA-72|blaOXA-98|blaOXA-116|blaOXA-117|blaOXA-160|blaOXA-175|blaOXA-176|blaOXA-253).*', lines_blast[5], re.I):
@@ -587,8 +577,7 @@ for n_l in selected:
     lines_blast = n_l.split("\t")
     # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
     # COV_DB:$lines_blast[6]\|";
-    out_blast = f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} ID:{
-        lines_blast[10]} COV_Q:{lines_blast[9]} COV_DB:{lines_blast[6]}| "
+    out_blast = f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} ID:{lines_blast[10]} COV_Q:{lines_blast[9]} COV_DB:{lines_blast[6]}| "
     select_imprimir.append(out_blast)
 
 mongo_client.save('VFDB', "<br>".join(select_imprimir))
@@ -634,16 +623,14 @@ pathlib.Path(abricante_out).unlink(missing_ok=True)
 
 print(f"Rodar o MLST {especie_mlst}")
 
-MLST_result = f"{path.basename(
-    caminho1)}/{path.basename(sample)}/unicycler/data.json"
+MLST_result = f"{path.basename(caminho1)}/{path.basename(sample)}/unicycler/data.json"
 # se nao tem mlst disponivel, ai tem que avisar
 if (especie_mlst == 'Nao disponivel') or (especie_mlst == ''):  # mod 26-08-22
     # print OUT2 "Nao disponivel\t";
     imprimir = 'Not available for this species'  # mod 26.08.22
     mongo_client.save('mlst', imprimir)
     # para o gal
-    gal_file.write(f"Clone ST {path.basename(
-        imprimir)} (determinado por MLST)\n")
+    gal_file.write(f"Clone ST {path.basename(imprimir)} (determinado por MLST)\n")
 else:
     # mod 26-08-22
     docker_line = (f"docker run --rm -i -v {path.basename(mlst_install)}/"
@@ -674,8 +661,7 @@ with open(mlst_json, "r") as IN3:
         imprimir = ST
         mongo_client.save('mlst', imprimir)
         # para o gal
-        gal_file.write(f"Clone ST {path.basename(
-            imprimir)} (determinado por MLST)\n")
+        gal_file.write(f"Clone ST {path.basename(imprimir)} (determinado por MLST)\n")
     m = re.search(r'nearest_sts":\s"((\d*,)*\d*)".*', line, re.IGNORECASE)
     if m:
         nearest_sts = m.group(1)
@@ -693,8 +679,7 @@ with open(mlst_json, "r") as IN3:
         imprimir = 'Unknown'
         mongo_client.save('mlst', imprimir)
         # para o gal
-        gal_file.write(f"Clone ST {path.basename(
-            imprimir)} (determinado por MLST)\n")
+        gal_file.write(f"Clone ST {path.basename(imprimir)} (determinado por MLST)\n")
 
 mongo_client.save('mutacoes_poli', "<br>".join(result2))
 gal_file.write("Mutações polimixina: %s" % "<br>".join(result2))
