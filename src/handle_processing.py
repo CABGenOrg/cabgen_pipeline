@@ -99,7 +99,7 @@ def get_abricate_result(file_path: str):
     return results
 
 
-def count_kraken_words(kraken_output: str) -> Tuple[str, str]:
+def count_kraken_words(kraken_output: str) -> Tuple[str, str, int, int]:
     """
     Processes Kraken result file and returns the two most common identified
     bacteria species.
@@ -119,10 +119,10 @@ def count_kraken_words(kraken_output: str) -> Tuple[str, str]:
     except FileNotFoundError:
         raise FileNotFoundError(f"File {kraken_output} not found")
 
-    most_commom_species = Counter(lines).most_common(2)
-    first_most_commom = most_commom_species[0][0].replace(" ", "")
+    most_common_species = Counter(lines).most_common(2)
+    first_most_common = most_common_species[0][0].replace(" ", "")
     first_count = most_common_species[0][1]
-    second_most_commom = most_commom_species[1][0].replace(" ", "")
+    second_most_common = most_common_species[1][0].replace(" ", "")
     second_count = most_common_species[1][1]
 
-    return first_most_commom, second_most_commom, first_count, second_count
+    return first_most_common, second_most_common, first_count, second_count
