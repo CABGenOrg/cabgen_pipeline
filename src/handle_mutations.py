@@ -61,8 +61,8 @@ def find_mutation(blast_result_path: str, mutations: List[str]) -> List[str]:
             # Check for truncation
             if (identities_total < (sbjct_length / 100) * 90) \
                     and (perc_identity > 80):
-                mutation = f"{sbjct} truncation: {
-                    identities_total}/{sbjct_length},"
+                mutation = (f"{sbjct} truncation: "
+                            f"{identities_total}/{sbjct_length},")
                 result.append(mutation)
 
         # Identify query sequence line
