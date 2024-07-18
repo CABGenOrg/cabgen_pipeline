@@ -28,9 +28,7 @@ fasta_outros = ''
 fasta_polimixina = ''
 identificacao = []
 lines = []
-lista_acineto = ''
-lista_enterobacter = ''
-lista_kleb = ''
+lista_especie = ''
 nearest_sts = ''
 preidentificacao = []
 resultadoANI = ''
@@ -76,27 +74,29 @@ caminho_abricate = sys.argv[2]
 # MELISE: ISSO É USADO AGORA PARA SALVAR OS DADOS PARA O MONGODB, CERTO?
 caminho_output = sys.argv[3]
 
-# entrar com o caminho da pastar onde esta instalado o kmer-db
-# /home/melise/kmer-db
-# MELISE: NAO USAMOS MAIS O KMER-DB
-kmerdb_install = sys.argv[4]
-
 # entrar com o caminho da pastar onde esta instalado o mlst.
 # ex: /home/melise/identificar_clones
-mlst_install = sys.argv[5]
+mlst_install = sys.argv[4]
 
 # Caminho para banco de dados com sequências de genes de R a polimixina
-db_polimixina = sys.argv[6]
+db_polimixina = sys.argv[5]
 
 # Caminho para banco de dados com sequências de genes de R mutacionais a
 # outros antibioticos
-db_outrosMut = sys.argv[7]
+db_outrosMut = sys.argv[6]
 
 # entrar com o caminho da pastar onde esta instalado o kraken2 ex: kraken2
-kraken2_install = sys.argv[8]
+kraken2_install = sys.argv[7]
 
 # entrar com o caminho do unicycler
-unicycler = sys.argv[9]
+unicycler = sys.argv[8]
+
+# entrar com o caminho do fastANI
+fastANI = sys.argv[9]
+
+# Caminho para banco de dados com especies para FastANI
+lista = sys.argv[10]
+
 
 print('Parametros: ')
 print(f"caminho: {path.basename(caminho1)} ")
@@ -104,12 +104,13 @@ print(f"Sample: {path.basename(sample)} ")
 print(f"SAmple2: {path.basename(sample2)} ")
 print(f"camino abricate: {path.basename(caminho_abricate)} ")
 print(f"camino abricate caminho_output: {path.basename(caminho_output)} ")
-print(f"camino abricate kmerdb_install: {path.basename(kmerdb_install)} ")
 print(f"mlst install: {path.basename(mlst_install)}  ")
 print(f"db polimixina: {path.basename(db_polimixina)}  ")
 print(f"db outros mut: {path.basename(db_outrosMut)}  ")
 print(f"kraken2_install: {path.basename(kraken2_install)}  ")
 print(f"unicycler: {path.basename(unicycler)} ")
+print(f"fastANI: {path.basename(fastANI)} ")
+print(f"lista: {path.basename(lista)}  ")
 
 R1 = sys.argv[10]
 R2 = sys.argv[11]
@@ -337,7 +338,6 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
                                  "enterobacterkobei",
                                  "enterobacterroggenkampii",
                                  "enterobacterludwigii"):
-    lista = ""
     fastANI_txt = "Para FastANI"
     if resultado_final_especie == 'klebsiellapneumoniae':
         especie_mlst = 'kpneumoniae'
@@ -356,7 +356,8 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
                                        "poli_outfile_suffix": "blastPoli"}
 
         result3, result2 = run_blast_and_check_mutations(bacteria_dict)
-        lista = '/opt/genomas_enterobacter/kleb_database/lista-kleb'
+        lista_especie = (f"{path.basename(lista)}"
+                    "/kleb_database/lista-kleb")
     elif resultado_final_especie in ("acinetobacterbaumannii",
                                      "acinetobacternosocomialis",
                                      "acinetobacterpittii",
@@ -365,7 +366,8 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
                                      "acinetobacterlactucae",
                                      "acinetobactercalcoaceticus"):
         # $printar_especies = "Acinetobacter baumannii";
-        lista = '/opt/genomas_enterobacter/fastANI_acineto/list-acineto'
+        lista_especie = (f"{path.basename(lista)}"
+                    "/fastANI_acineto/list-acineto")
     elif resultado_final_especie in ("enterobactercloacae",
                                      "enterobacterhormaechei",
                                      "enterobacterasburiae",
@@ -373,15 +375,16 @@ elif resultado_final_especie in ('klebsiellapneumoniae',
                                      "enterobacterroggenkampii",
                                      "enterobacterludwigii"):
         especie_mlst = "ecloacae"
-        lista = '/opt/genomas_enterobacter/fastANI/list_entero'
+        lista_especie = (f"{path.basename(lista)}"
+                    "/list_entero")
         fastANI_txt = 'Rodar fastANI para subespecie'
 
     print(fastANI_txt)
     # Abrir o arquivo lista
 
-    fastani_line = (f"/opt/FastANI/fastANI -q {path.basename(caminho1)}/"
+    fastani_line = (f"fastANI -q {path.basename(caminho1)}/"
                     f"{path.basename(sample)}/unicycler/assembly.fasta "
-                    f"--rl {lista} -o {path.basename(sample)}_out-fastANI "
+                    f"--rl {lista_especie} -o {path.basename(sample)}_out-fastANI "
                     f"--threads {THREADS}")
     run_command_line(fastani_line)
 

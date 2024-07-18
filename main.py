@@ -73,6 +73,13 @@ def main():
                         type=str,
                         help=("Caminho para o programa fastANI "
                               "usado para identificar subespecie."))
+    
+def main():
+    parser = ArgumentParser()
+    parser.add_argument("--db_fastANI", default="/opt/genomas_enterobacter",
+                        type=str,
+                        help=("Caminho para os dbs usados "
+                              "pelo fastANI."))
 
 
 
