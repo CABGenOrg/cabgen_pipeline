@@ -37,7 +37,7 @@ def main():
                         type=str,
                         help=("Docker com o programa, banco de dados e "
                               "dependencias para realizar o MLST."))
-    parser.add_argument("--kraken2", default="/opt/kraken2/kraken2",
+    parser.add_argument("--kraken2", default="/opt/kraken2",
                         type=str,
                         help=("Arquivos e bin do Kraken "
                               "usado para identificar especie."))
