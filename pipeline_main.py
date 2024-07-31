@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from pipeline_website3 import pipeline
 
 
 def main():
@@ -55,7 +56,7 @@ def main():
                               "usado para identificar subespecie."))
 
     args = parser.parse_args()
-    print(args)
+    pipeline(args)
 
 
 if __name__ == "__main__":
