@@ -101,15 +101,15 @@ def pipeline(args: Namespace):
     print(f"caminho: {caminho1} ")
     print(f"Sample: {path.basename(sample)} ")
     print(f"SAmple2: {path.basename(sample2)} ")
-    print(f"camino abricate: {path.basename(caminho_abricate)} ")
+    print(f"camino abricate: {caminho_abricate} ")
     print(f"camino abricate caminho_output: {path.basename(caminho_output)} ")
-    print(f"mlst install: {path.basename(mlst_install)}  ")
-    print(f"db polimixina: {path.basename(db_polimixina)}  ")
-    print(f"db outros mut: {path.basename(db_outrosMut)}  ")
-    print(f"kraken2_install: {path.basename(kraken2_install)}  ")
-    print(f"unicycler: {path.basename(unicycler)} ")
-    print(f"fastANI: {path.basename(fastANI)} ")
-    print(f"lista: {path.basename(lista)}  ")
+    print(f"mlst install: {mlst_install}  ")
+    print(f"db polimixina: {db_polimixina}  ")
+    print(f"db outros mut: {db_outrosMut}  ")
+    print(f"kraken2_install: {kraken2_install}  ")
+    print(f"unicycler: {unicycler} ")
+    print(f"fastANI: {fastANI} ")
+    print(f"lista: {lista}  ")
 
     R1 = sys.argv[11]
     R2 = sys.argv[12]
@@ -118,7 +118,7 @@ def pipeline(args: Namespace):
     mongo_client.connect()
     ##################################################
     # rodar unicycler
-    unicycler_line = (f"unicycler -1 {R1} -2 {R2} "
+    unicycler_line = (f"{unicycler}/unicycler  -1 {R1} -2 {R2} "
                       f"-o {caminho1}/{path.basename(sample2)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS} --spades_path "
