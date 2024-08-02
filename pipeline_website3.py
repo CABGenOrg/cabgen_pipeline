@@ -55,7 +55,7 @@ def pipeline(args: Namespace):
 
     # Guardar o caminho do diretorio "Output", com o resultado da montagem,
     # anotacao e blast para todas as amostra. ex /home/melise/Output
-    caminho1 = sys.argv[0]
+    caminho1 = args.output
 
     # Guardar o nome da amostra com o _S*
     sample = args.sample
