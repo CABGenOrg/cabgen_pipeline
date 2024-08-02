@@ -46,10 +46,14 @@ def main():
                         type=str,
                         help=("Arquivos e bin do Unicycler "
                               "usado para montagem do genoma."))
-    parser.add_argument("--reads", default="/sgbmi_node/src/views/uploads/",
+    parser.add_argument("--read1",
                         type=str,
                         help=("Caminho para as reads "
-                              "R1 e R2 que o usuario carregou."))
+                              "R1 que o usuario carregou."))
+    parser.add_argument("--read2",
+                        type=str,
+                        help=("Caminho para as reads "
+                              "R2 que o usuario carregou."))
     parser.add_argument("--fastANI", default="/opt/FastANI/fastANI",
                         type=str,
                         help=("Caminho para o programa fastANI "

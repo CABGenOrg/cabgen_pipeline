@@ -71,10 +71,6 @@ def pipeline(args: Namespace):
 
     caminho_abricate = args.abricate
 
-    # Caminho para o output onde esta a tabela que sera colocado os resultados
-    # MELISE: ISSO É USADO AGORA PARA SALVAR OS DADOS PARA O MONGODB, CERTO?
-    caminho_output = sys.argv[3]
-
     # entrar com o caminho da pastar onde esta instalado o mlst.
     # ex: /home/melise/identificar_clones
     mlst_install = args.mlst
@@ -95,14 +91,13 @@ def pipeline(args: Namespace):
     fastANI = args.fastANI
 
     # Caminho para banco de dados com especies para FastANI
-    lista = sys.argv[10]
+    lista = args.fastani_db
 
     print('Parametros: ')
     print(f"caminho: {caminho1} ")
     print(f"Sample: {path.basename(sample)} ")
     print(f"SAmple2: {path.basename(sample2)} ")
     print(f"camino abricate: {caminho_abricate} ")
-    print(f"camino abricate caminho_output: {path.basename(caminho_output)} ")
     print(f"mlst install: {mlst_install}  ")
     print(f"db polimixina: {db_polimixina}  ")
     print(f"db outros mut: {db_outrosMut}  ")
@@ -111,8 +106,8 @@ def pipeline(args: Namespace):
     print(f"fastANI: {fastANI} ")
     print(f"lista: {lista}  ")
 
-    R1 = sys.argv[11]
-    R2 = sys.argv[12]
+    R1 = args.reads1
+    R2 = args.reads2
 
     mongo_client = MongoSaver(int(sample2))
     mongo_client.connect()
