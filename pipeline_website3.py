@@ -397,7 +397,7 @@ def pipeline(args: Namespace):
         # array para guardar especies
 
         print('resultado do fastANI')
-        with open(f"{sample}_out-fastANI", "r") as IN7:
+        with open(f"{sample2}_out-fastANI", "r") as IN7:
             # first line only
             especiE = IN7.readline().rstrip("\n").split('\t')
             preidentificacao = especiE[1].split("/")
