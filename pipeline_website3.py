@@ -97,7 +97,7 @@ def pipeline(args: Namespace):
     print(f"caminho: {caminho1} ")
     print(f"Sample: {path.basename(sample)} ")
     print(f"SAmple2: {path.basename(sample2)} ")
-    print(f"camino abricate: {caminho_abricate} ")
+    print(f"abricate: {caminho_abricate} ")
     print(f"mlst install: {mlst_install}  ")
     print(f"db polimixina: {db_polimixina}  ")
     print(f"db outros mut: {db_outrosMut}  ")
@@ -106,18 +106,18 @@ def pipeline(args: Namespace):
     print(f"fastANI: {fastANI} ")
     print(f"lista: {lista}  ")
 
-    R1 = args.reads1
-    R2 = args.reads2
+    R1 = args.read1
+    R2 = args.read2
 
     mongo_client = MongoSaver(int(sample2))
     mongo_client.connect()
     ##################################################
     # rodar unicycler
-    unicycler_line = (f"{unicycler}/unicycler  -1 {R1} -2 {R2} "
+    unicycler_line = (f"{unicycler}  -1 {R1} -2 {R2} "
                       f"-o {caminho1}/{path.basename(sample2)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS} --spades_path "
-                      "/opt/SPAdes-3.13.0-Linux/bin/spades.py")
+                      "/opt/SPAdes-3.15.5-Linux/bin/spades.py")
     run_command_line(unicycler_line)
 
     # arquivo assembly.fasta da amostra
@@ -160,7 +160,7 @@ def pipeline(args: Namespace):
     shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
 
     # rodar o CheckM
-    checkM_line = ("checkm lineage_wf -x fasta checkM_bins checkM_bins"
+    checkM_line = ("checkm lineage_wf -x fasta checkM_bins checkM_bins "
                    f"--threads {THREADS} --pplacer_threads {THREADS}")
     checkM_qa_line = (f"checkm qa -o 2 -f checkM_bins/{sample2}"
                       "_resultados --tab_table checkM_bins/lineage.ms "
@@ -318,9 +318,8 @@ def pipeline(args: Namespace):
     elif resultado_final_especie == 'enterococcusfaecium':
         especie_mlst = 'efaecium'
         printar_especies = 'Enterococcus faecium'
-    # MELISE: ADICIONEI
+    # MELISE: ADICIONEI perform MLST for any species in the genus Acinetobacter
     elif re.match(r"acinetobacter.*", resultado_final_especie, re.I):
-        # MELISE: ADICIONEI
         especie_mlst = 'abaumannii_2'
     elif resultado_final_especie in ('klebsiellapneumoniae',
                                      'acinetobacterbaumannii',
