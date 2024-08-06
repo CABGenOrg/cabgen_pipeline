@@ -318,9 +318,6 @@ def pipeline(args: Namespace):
     elif resultado_final_especie == 'enterococcusfaecium':
         especie_mlst = 'efaecium'
         printar_especies = 'Enterococcus faecium'
-    # MELISE: ADICIONEI perform MLST for any species in the genus Acinetobacter
-    elif re.match(r"acinetobacter.*", resultado_final_especie, re.I):
-        especie_mlst = 'abaumannii_2'
     elif resultado_final_especie in ('klebsiellapneumoniae',
                                      'acinetobacterbaumannii',
                                      "acinetobacternosocomialis",
@@ -356,16 +353,18 @@ def pipeline(args: Namespace):
             result3, result2 = run_blast_and_check_mutations(bacteria_dict)
             lista_especie = (f"{lista}"
                              "/kleb_database/lista-kleb")
-        elif resultado_final_especie in ("acinetobacterbaumannii",
+        elif re.match(r"acinetobacter.*", resultado_final_especie, re.I):
+            especie_mlst = 'abaumannii_2' # perform MLST for any species in the genus Acinetobacter
+            if resultado_final_especie in ("acinetobacterbaumannii",
                                          "acinetobacternosocomialis",
                                          "acinetobacterpittii",
                                          "acinetobacterseifertii",
                                          "acinetobacterdijkshoorniae",
                                          "acinetobacterlactucae",
                                          "acinetobactercalcoaceticus"):
-            # $printar_especies = "Acinetobacter baumannii";
-            lista_especie = (f"{lista}"
-                             "/fastANI_acineto/list-acineto")
+                # $printar_especies = "Acinetobacter baumannii";
+                lista_especie = (f"{lista}"
+                                "/fastANI_acineto/list-acineto")
         elif resultado_final_especie in ("enterobactercloacae",
                                          "enterobacterhormaechei",
                                          "enterobacterasburiae",
@@ -375,7 +374,7 @@ def pipeline(args: Namespace):
             especie_mlst = "ecloacae"
             lista_especie = (f"{lista}"
                              "/list_entero")
-            fastANI_txt = 'Rodar fastANI para subespecie'
+        fastANI_txt = 'Rodar fastANI para subespecie'
 
         print(fastANI_txt)
         # Abrir o arquivo lista
