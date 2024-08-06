@@ -283,7 +283,8 @@ def pipeline(args: Namespace):
         printar_especies = 'Pseudomonas aeruginosa'
         fasta_polimixina = (f"{db_polimixina}/"
                             "proteins_pseudo_poli.fasta")
-
+        fasta_outros = (f"{db_outrosMut}"
+                            "/proteins_outrasMut_pseudo.fasta")
         bacteria_dict: BacteriaDict = {"species": resultado_final_especie,
                                        "assembly_file": montagem,
                                        "sample": sample,
