@@ -24,6 +24,6 @@ class MongoSaver:
             self._get_db()
             bson = {"$set": {key: value}}
             sample = self.query.get("sequenciaId")
-            self.db.update_one(self.query, bson, upsert=True)
+            self.db.insert_one(self.query, bson, upsert=True)
         except Exception as error:
             raise Exception(f"Could not update {sample}.\n{error}")
