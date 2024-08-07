@@ -374,7 +374,7 @@ def pipeline(args: Namespace):
                                          "enterobacterludwigii"):
             especie_mlst = "ecloacae"
             lista_especie = (f"{lista}"
-                             "/list_entero")
+                             "/fastANI/list_entero")
         fastANI_txt = 'Rodar fastANI para subespecie'
 
         print(fastANI_txt)

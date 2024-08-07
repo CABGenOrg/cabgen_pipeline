@@ -73,7 +73,7 @@ def find_mutation(blast_result_path: str, mutations: List[str]) -> List[str]:
         # Identify alignment line
         alignment_sequence_match = alignment_sequence_pattern.search(line)
         if alignment_sequence_match and perc_identity > 90:
-            alignment_sequence = list(alignment_sequence_match.group().strip())
+            alignment_sequence = list(alignment_sequence_match.group())
 
         # Identify subject sequence line
         subject_sequence_match = subject_sequence_pattern.search(line)
