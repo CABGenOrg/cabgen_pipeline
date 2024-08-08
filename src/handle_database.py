@@ -4,7 +4,7 @@ from pymongo import MongoClient
 class MongoSaver:
     def __init__(self, sample_id: int):
         self.database_url = "mongodb://localhost:27017/"
-        self.database_name = "sbgmi"
+        self.database_name = "sgbmi"
         self.collection_name = "relatorios"
         self.query = {"sequenciaId": sample_id}
 
