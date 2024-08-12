@@ -715,7 +715,7 @@ def pipeline(args: Namespace):
     # figuring out if file is compressed or not
     catcmd = "cat"
     res = run_command_line(f"file {R1}")
-    if res and str(res).find("gzip compressed") > -1:
+    if res and str(res).find("gzip compatible") > -1:
         catcmd = "zcat"
 
     zcat = f"echo $({catcmd} {R1} | wc -l)/4 | bc"
@@ -733,10 +733,12 @@ def pipeline(args: Namespace):
     zcat3 = (f"{catcmd} {R1} | awk '{{if(NR%4==2) "
              f"{{count++; bases += length}} }} END{{print bases/count}}'")
     res_avg = run_command_line(zcat3)
-    average_length2 = res_avg.rstrip("\n")
+    average_length = res_avg.rstrip("\n")
 
     gal_file.close()
 
-    coverage = (float(average_length2) * soma_reads) / float(genome_size)
+    pre_coverage = (float(average_length) * soma_reads) / float(genome_size)
+
+    coverage = round(pre_coverage, 2)
 
     mongo_client.save('coverage', str(coverage))
