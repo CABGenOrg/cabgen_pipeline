@@ -34,7 +34,7 @@ def main():
                         type=str,
                         help=("Caminho onde esta o bin do programa abricate."))
     parser.add_argument("--mlst",
-                        default="/opt/identificar_clones/mlst_run.py",
+                        default="/opt/identificar_clones",
                         type=str,
                         help=("Docker com o programa, banco de dados e "
                               "dependencias para realizar o MLST."))
