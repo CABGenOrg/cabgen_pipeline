@@ -42,7 +42,7 @@ def main():
                         type=str,
                         help=("Arquivos e bin do Kraken "
                               "usado para identificar especie."))
-    parser.add_argument("--unicycler", default="/usr/local/bin",
+    parser.add_argument("--unicycler", default="/home/melise/teste_cabgen/Unicycler/unicycler-runner.py",
                         type=str,
                         help=("Arquivos e bin do Unicycler "
                               "usado para montagem do genoma."))
