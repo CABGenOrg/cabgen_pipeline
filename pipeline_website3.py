@@ -203,7 +203,7 @@ def pipeline(args: Namespace):
             mongo_client.save('checkm_4', lines[11])  # contigs
             contaminacao = lines[6]
 
-    mongo_client.save('sample', sample)
+    mongo_client.save('sample', sample2)
     ###########################################################################
     # Identificar especie usando o kraken
 
