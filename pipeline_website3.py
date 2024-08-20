@@ -59,13 +59,9 @@ def pipeline(args: Namespace):
 
     # Guardar o nome da amostra com o _S*
     sample = args.sample
-    # para pegar o numero da amostra antes do _S1
-    sample1 = str(sample).split('_')
-    sample2 = sample1[0]
-    print(f"Sample: {sample2}")
 
     # criar um diretório para a amostra
-    makedirs(f"{caminho1}/{sample2}", exist_ok=True)
+    makedirs(f"{caminho1}/{sample}", exist_ok=True)
 
     # caminho para onde esta instalado o abricate ex: ./abricate/bin/abricate
 
@@ -95,8 +91,7 @@ def pipeline(args: Namespace):
 
     print('Parametros: ')
     print(f"caminho: {caminho1} ")
-    print(f"Sample: {path.basename(sample)} ")
-    print(f"SAmple2: {path.basename(sample2)} ")
+    print(f"sample: {path.basename(sample)} ")
     print(f"abricate: {caminho_abricate} ")
     print(f"mlst install: {mlst_install}  ")
     print(f"db polimixina: {db_polimixina}  ")
@@ -109,12 +104,13 @@ def pipeline(args: Namespace):
     R1 = args.read1
     R2 = args.read2
 
-    mongo_client = MongoSaver(int(sample2))
+    mongo_client = MongoSaver(int(sample))
     mongo_client.connect()
     ##################################################
     # rodar unicycler
+    print('Run Unicycler ')
     unicycler_line = (f"{unicycler}  -1 {R1} -2 {R2} "
-                      f"-o {caminho1}/{path.basename(sample2)}/"
+                      f"-o {caminho1}/{path.basename(sample)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS} --spades_path "
                       "/opt/SPAdes-3.15.5-Linux/bin/spades.py")
@@ -122,13 +118,14 @@ def pipeline(args: Namespace):
 
     # arquivo assembly.fasta da amostra
 
-    montagem = (f"{caminho1}/{sample2}"
+    montagem = (f"{caminho1}/{sample}"
                 "/unicycler/assembly.fasta")
 
     ###########################################################################
     # rodar prokka
+    print('Run Prokka ')
     prokka_line = (f"prokka --outdir {caminho1}/"
-                   f"{sample2}/prokka --prefix genome {montagem} "
+                   f"{sample}/prokka --prefix genome {montagem} "
                    "--force --cpus 0")
     run_command_line(prokka_line)
 
@@ -162,10 +159,11 @@ def pipeline(args: Namespace):
     # rodar o CheckM
     checkM_line = ("checkm lineage_wf -x fasta checkM_bins checkM_bins "
                    f"--threads {THREADS} --pplacer_threads {THREADS}")
-    checkM_qa_line = (f"checkm qa -o 2 -f checkM_bins/{sample2}"
+    checkM_qa_line = (f"checkm qa -o 2 -f checkM_bins/{sample}"
                       "_resultados --tab_table checkM_bins/lineage.ms "
                       f"checkM_bins --threads {THREADS}")
-
+    
+    print('Run CheckM ')
     run_command_line(checkM_line)
     run_command_line(checkM_qa_line)
     # apagar arquivos gerados, deixando apenas resultados
@@ -184,7 +182,7 @@ def pipeline(args: Namespace):
 
     genome_size = 1
 
-    with open(f"checkM_bins/{sample2}_resultados") as IN_check:
+    with open(f"checkM_bins/{sample}_resultados") as IN_check:
         next(IN_check)  # ignore header
         for row in IN_check:
             # remove \n of the line end
@@ -203,11 +201,11 @@ def pipeline(args: Namespace):
             mongo_client.save('checkm_4', lines[11])  # contigs
             contaminacao = lines[6]
 
-    mongo_client.save('sample', sample2)
+    mongo_client.save('sample', sample)
     ###########################################################################
     # Identificar especie usando o kraken
 
-    print('rodar o kraken')
+    print('Run Kraken')
     kraken_line = (f"{kraken2_install}/kraken2 "
                    f"--db {kraken2_install}/minikraken2_v2_8GB"
                    "_201904_UPDATE "
@@ -375,14 +373,13 @@ def pipeline(args: Namespace):
             especie_mlst = "ecloacae"
             lista_especie = (f"{lista}"
                              "/fastANI/list_entero")
-        fastANI_txt = 'Rodar fastANI para subespecie'
 
-        print(fastANI_txt)
         # Abrir o arquivo lista
+        print('Run FastANI ')
 
         fastani_line = (f"{fastANI} -q {caminho1}/"
-                        f"{sample2}/unicycler/assembly.fasta "
-                        f"--rl {lista_especie} -o {sample2}_out-fastANI "
+                        f"{sample}/unicycler/assembly.fasta "
+                        f"--rl {lista_especie} -o {sample}_out-fastANI "
                         f"--threads {THREADS}")
         run_command_line(fastani_line)
 
@@ -390,8 +387,7 @@ def pipeline(args: Namespace):
         # Abrir o arquivo do output de distancia
         # array para guardar especies
 
-        print('resultado do fastANI')
-        with open(f"{sample2}_out-fastANI", "r") as IN7:
+        with open(f"{sample}_out-fastANI", "r") as IN7:
             # first line only
             especiE = IN7.readline().rstrip("\n").split('\t')
             preidentificacao = especiE[1].split("/")
@@ -440,7 +436,6 @@ def pipeline(args: Namespace):
 
     # print "$especie_mlst ";
 
-    print('contaminacao...')
     # printar no arquivo final o nome da especie
     if float(contaminacao) <= 10.:
         # print OUT2 "$printar_especies\t";
@@ -464,9 +459,12 @@ def pipeline(args: Namespace):
     ###########################################################################
     # Rodar ABRICATE
     # Para resistencia usando o ResFinder (porque so tem resistencia adquirida)
-    abricate_out = f"{sample2}_outAbricateRes"
+    abricate_out = f"{sample}_outAbricateRes"
+
+    print('Run Abricate - ResFinder ')
+
     abricate_line = (f"{caminho_abricate} --db resfinder "
-                     f"{caminho1}/{sample2}/prokka"
+                     f"{caminho1}/{sample}/prokka"
                      f"/genome.ffn > {abricate_out} --threads {THREADS}")
     run_command_line(abricate_line)
 
@@ -575,9 +573,10 @@ def pipeline(args: Namespace):
 
     ###########################################################################
     # Rodar abricate para VFDB (Virulence factor)
-    abricate_out = f"{sample2}_outAbricateVFDB"
+    abricate_out = f"{sample}_outAbricateVFDB"
+    print('Run Abricate - VFDB ')
     abricate_line = (f"{caminho_abricate} --db vfdb "
-                     f"{caminho1}/{sample2}/prokka/"
+                     f"{caminho1}/{sample}/prokka/"
                      f"genome.ffn > {abricate_out} --threads {THREADS}")
 
     run_command_line(abricate_line)
@@ -602,9 +601,10 @@ def pipeline(args: Namespace):
 
     ###########################################################################
     # Rodar abricate para PlasmidFinder
-    abricate_out = f"{sample2}_outAbricatePlasmid"
+    abricate_out = f"{sample}_outAbricatePlasmid"
+    print('Run Abricate - PlasmidFinder ')
     abricate_line = (f"{caminho_abricate} --db plasmidfinder "
-                     f"{caminho1}/{sample2}/unicycler"
+                     f"{caminho1}/{sample}/unicycler"
                      f"/assembly.fasta > {abricate_out} --threads {THREADS}")
 
     run_command_line(abricate_line)
@@ -638,9 +638,9 @@ def pipeline(args: Namespace):
 
     ###########################################################################
 
-    print(f"Rodar o MLST {especie_mlst}")
+    print(f"Run MLST for {especie_mlst}")
 
-    MLST_result = (f"{caminho1}/{sample2}"
+    MLST_result = (f"{caminho1}/{sample}"
                    "/unicycler/data.json")
     # se nao tem mlst disponivel, ai tem que avisar
     # mod 26-08-22
@@ -655,7 +655,7 @@ def pipeline(args: Namespace):
         # mod 26-08-22
         docker_line = (f"docker run --rm -i -v {mlst_install}/"
                        "mlst_db:/database -v "
-                       f"{caminho1}/{sample2}/"
+                       f"{caminho1}/{sample}/"
                        "unicycler:/workdir mlst -i assembly.fasta -o . "
                        f"-s {especie_mlst}")
         # rodar o mlst
@@ -710,7 +710,7 @@ def pipeline(args: Namespace):
     mongo_client.save('mutacoes_outras', "<br>".join(result3))
 
     ######################################################################
-    print('rodar coverage')
+    print('Run coverage')
 
     # figuring out if file is compressed or not
     catcmd = "cat"
