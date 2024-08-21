@@ -114,10 +114,14 @@ def pipeline(args: Namespace):
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS} --spades_path "
                       "/opt/SPAdes-3.15.5-Linux/bin/spades.py")
-    run_command_line(unicycler_line)
+    program_output = run_command_line(unicycler_line)
+    
+    if program_output:
+        print(program_output)
+    else:
+        print("Error occurred while running the unicycler command.")
 
     # arquivo assembly.fasta da amostra
-
     montagem = (f"{caminho1}/{sample}"
                 "/unicycler/assembly.fasta")
 
