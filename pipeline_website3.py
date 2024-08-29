@@ -719,7 +719,7 @@ def pipeline(args: Namespace):
     # figuring out if file is compressed or not
     catcmd = "cat"
     res = run_command_line(f"file {R1}")
-    if res and str(res).find("gzip compatible") > -1:
+    if res and str(res).find("gzip compressed") > -1:
         catcmd = "zcat"
 
     zcat = f"echo $({catcmd} {R1} | wc -l)/4 | bc"
