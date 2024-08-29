@@ -307,7 +307,7 @@ def pipeline(args: Namespace):
         printar_especies = 'Streptococcus pyogenes'
     elif resultado_final_especie == 'pseudomonasputida':
         especie_mlst = 'pputida'
-        printar_especies = 'pseudomonas putida'
+        printar_especies = 'Pseudomonas putida'
     # modificado 19.11.21
     elif resultado_final_especie == 'Listeriamonocytogenes':
         especie_mlst = 'lmonocytogenes'
@@ -719,7 +719,7 @@ def pipeline(args: Namespace):
     # figuring out if file is compressed or not
     catcmd = "cat"
     res = run_command_line(f"file {R1}")
-    if res and str(res).find("gzip compressed") > -1:
+    if res and (str(res).find("gzip compressed") > -1 or str(res).find("gzip compatible") > -1):
         catcmd = "zcat"
 
     zcat = f"echo $({catcmd} {R1} | wc -l)/4 | bc"
