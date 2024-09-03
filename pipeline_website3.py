@@ -251,7 +251,7 @@ def pipeline(args: Namespace):
     especie_mlst = ''  # mod 11.05.22
 
     # mod 11.05.22
-    if (re.findall(re.compile(r'\w+\s\w+', re.I), check_especies)):
+    if (re.findall(re.compile(r'\w+\s\w.*', re.I), check_especies)):
         check_especies = check_especies.strip()
         genero, especie = check_especies.split(" ")
         # print "$genero\n$especie\n";

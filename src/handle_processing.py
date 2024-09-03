@@ -120,9 +120,9 @@ def count_kraken_words(kraken_output: str) -> Tuple[str, str, int, int]:
         raise FileNotFoundError(f"File {kraken_output} not found")
 
     most_common_species = Counter(lines).most_common(2)
-    first_most_common = most_common_species[0][0].replace(" ", "")
+    first_most_common = most_common_species[0][0]
     first_count = most_common_species[0][1]
-    second_most_common = most_common_species[1][0].replace(" ", "")
+    second_most_common = most_common_species[1][0]
     second_count = most_common_species[1][1]
 
     return first_most_common, second_most_common, first_count, second_count
