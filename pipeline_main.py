@@ -42,6 +42,10 @@ def main():
                         type=str,
                         help=("Arquivos e bin do Kraken "
                               "usado para identificar especie."))
+    parser.add_argument("--kraken_db", default="/opt/kraken2",
+                        type=str,
+                        help=("Arquivos do banco de dados "
+                              "usado pelo Kraken2."))
     parser.add_argument("--unicycler", default="/home/melise/teste_cabgen/Unicycler/unicycler-runner.py",
                         type=str,
                         help=("Arquivos e bin do Unicycler "

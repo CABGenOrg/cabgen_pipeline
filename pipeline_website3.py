@@ -80,6 +80,9 @@ def pipeline(args: Namespace):
     # entrar com o caminho da pastar onde esta instalado o kraken2 ex: kraken2
     kraken2_install = args.kraken2
 
+    #banco de dados para kraken
+    kraken_db = args.kraken_db
+
     # entrar com o caminho do unicycler
     unicycler = args.unicycler
 
@@ -97,6 +100,7 @@ def pipeline(args: Namespace):
     print(f"db polimixina: {db_polimixina}  ")
     print(f"db outros mut: {db_outrosMut}  ")
     print(f"kraken2_install: {kraken2_install}  ")
+    print(f"kraken_db: {kraken_db}  ")
     print(f"unicycler: {unicycler} ")
     print(f"fastANI: {fastANI} ")
     print(f"lista: {lista}  ")
@@ -211,8 +215,7 @@ def pipeline(args: Namespace):
 
     print('Run Kraken')
     kraken_line = (f"{kraken2_install}/kraken2 "
-                   f"--db {kraken2_install}/minikraken2_v2_8GB"
-                   "_201904_UPDATE "
+                   f"--db {kraken_db} "
                    f"--use-names --paired {R1} {R2} "
                    f"--output out_kraken --threads {THREADS}")
     run_command_line(kraken_line)
@@ -253,7 +256,9 @@ def pipeline(args: Namespace):
     # mod 11.05.22
     if (re.findall(re.compile(r'\w+\s\w.*', re.I), check_especies)):
         check_especies = check_especies.strip()
-        genero, especie = check_especies.split(" ")
+        split_especies = check_especies.split(" ")
+        genero = split_especies[0]
+        especie = split_especies[1]
         # print "$genero\n$especie\n";
         # Associar o nome da especie ao banco do mlst e gravar o nome que sera
         # dado como resultado final
@@ -698,10 +703,11 @@ def pipeline(args: Namespace):
                 mongo_client.save('mlst', imprimir)
                 # para o gal
                 gal_file.write(f"Clone ST {path.basename(imprimir)}"
-                               " (determinado por MLST)\n")
-        m = re.search(r'.*sequence_type":\s"(Unknown)".*', line, re.IGNORECASE)
-        if m:
-            ST = m.group(1)
+                               " (determinado por MLST)\n") 
+        #m = re.search(r'.*sequence_type":\s"(Unknown)".*', line, re.IGNORECASE)
+        if not m:
+        #if m:
+        #    ST = m.group(1)
             # print OUT2 "Unknown\t";
             imprimir = 'Unknown'
             mongo_client.save('mlst', imprimir)
