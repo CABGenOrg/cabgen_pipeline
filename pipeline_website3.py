@@ -640,9 +640,10 @@ def pipeline(args: Namespace):
                 'COV_DB:' + lines_blast[6] + '|' + ' '
             select_imprimir.append(out_blast)
             imprimir += f"\n{lines_blast[5]}"
-            mongo_client.save("plasmid", "<br>".join(select_imprimir))
-    pathlib.Path(abricate_out).unlink(missing_ok=True)
     gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
+
+    mongo_client.save("plasmid", "<br>".join(select_imprimir))
+    pathlib.Path(abricate_out).unlink(missing_ok=True)
 
     ###########################################################################
 
