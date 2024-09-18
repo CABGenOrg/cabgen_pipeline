@@ -214,7 +214,7 @@ def pipeline(args: Namespace):
     # Identificar especie usando o kraken
 
     print('Run Kraken')
-    kraken_line = (f"{kraken2_install}/kraken2 "
+    kraken_line = (f"{kraken2_install} "
                    f"--db {kraken_db} "
                    f"--use-names --paired {R1} {R2} "
                    f"--output out_kraken --threads {THREADS}")
