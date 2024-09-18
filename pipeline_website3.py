@@ -646,7 +646,42 @@ def pipeline(args: Namespace):
     pathlib.Path(abricate_out).unlink(missing_ok=True)
 
     ###########################################################################
+    
+    print(f"Run MLST for {especie_mlst}")
 
+    # se nao tem mlst disponivel, ai tem que avisar
+    # mod 26-08-22
+    mlst_line= (f"{mlst_install} --threads {THREADS} --exclude abaumannii --csv "
+                f"{caminho1}/{sample}/unicycler/assembly.fasta > "
+                f"{caminho1}/{sample}/unicycler/mlst.csv")
+
+    run_command_line(mlst_line)
+
+    mlst_result = (f"{caminho1}/{sample}/unicycler/mlst.csv")
+    #will create file, if it exists will do nothing
+    #mlst_result.touch(exist_ok=True)
+
+    with open(mlst_result, "r") as IN3:
+        line = IN3.readline().rstrip("\n")  # single line file
+        out_mlst = line.split(",")
+        scheme_mlst = out_mlst[1]
+        ST = out_mlst[2]
+        if ST != "-":
+                imprimir = ST
+                mongo_client.save('mlst', imprimir)
+                # para o gal
+                gal_file.write((f"Clone ST {path.basename(imprimir)} "
+                            "(determinado por MLST)\n"))
+                print(f"Scheme used {scheme_mlst} ")
+        if scheme_mlst == "-":
+                imprimir = "Not available"
+                mongo_client.save('mlst', imprimir)
+                # para o gal
+                gal_file.write((f"Clone ST {path.basename(imprimir)} "
+                            "(determinado por MLST)\n"))
+                print(f"Scheme used {scheme_mlst} ")
+
+    """
     print(f"Run MLST for {especie_mlst}")
 
     MLST_result = (f"{caminho1}/{sample}"
@@ -714,6 +749,7 @@ def pipeline(args: Namespace):
             # para o gal
             gal_file.write((f"Clone ST {path.basename(imprimir)} "
                             "(determinado por MLST)\n"))
+    """
 
     mongo_client.save('mutacoes_poli', "<br>".join(result2))
     gal_file.write("Mutações polimixina: %s" % "<br>".join(result2))
