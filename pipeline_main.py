@@ -17,7 +17,7 @@ def main():
                         type=str,
                         help=("Caminho para os dbs usados "
                               "pelo fastANI."))
-    parser.add_argument("--output", default="/sgbmi_node/src/views/uploads/",
+    parser.add_argument("--output", default="/cabgen/cabgen_backend/src/views/uploads/",
                         type=str,
                         help=("Caminho para guardar os resultados de montagem "
                               "e anotacao do genoma."))
