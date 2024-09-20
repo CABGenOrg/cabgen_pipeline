@@ -113,7 +113,7 @@ def pipeline(args: Namespace):
                       f"-o {caminho1}/{path.basename(sample)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS} --spades_path "
-                      "/opt/SPAdes-3.15.5-Linux/bin/spades.py")
+                      "/opt/SPAdes-4.0.0-Linux/bin/spades.py")
     program_output = run_command_line(unicycler_line)
     
     if program_output:
