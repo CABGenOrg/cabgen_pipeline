@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.10
+
 from argparse import ArgumentParser
 from pipeline_website3 import pipeline
 
