@@ -17,7 +17,7 @@ def main():
                         type=str,
                         help=("Caminho para os dbs usados "
                               "pelo fastANI."))
-    parser.add_argument("--output", default="/sgbmi_node/src/views/uploads/",
+    parser.add_argument("--output", default="/cabgen/cabgen_backend/src/views/uploads/",
                         type=str,
                         help=("Caminho para guardar os resultados de montagem "
                               "e anotacao do genoma."))
@@ -42,6 +42,10 @@ def main():
                         type=str,
                         help=("Arquivos e bin do Kraken "
                               "usado para identificar especie."))
+    parser.add_argument("--kraken_db", default="/opt/kraken2",
+                        type=str,
+                        help=("Arquivos do banco de dados "
+                              "usado pelo Kraken2."))
     parser.add_argument("--unicycler", default="/home/melise/teste_cabgen/Unicycler/unicycler-runner.py",
                         type=str,
                         help=("Arquivos e bin do Unicycler "

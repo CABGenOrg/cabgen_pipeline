@@ -80,6 +80,9 @@ def pipeline(args: Namespace):
     # entrar com o caminho da pastar onde esta instalado o kraken2 ex: kraken2
     kraken2_install = args.kraken2
 
+    #banco de dados para kraken
+    kraken_db = args.kraken_db
+
     # entrar com o caminho do unicycler
     unicycler = args.unicycler
 
@@ -97,6 +100,7 @@ def pipeline(args: Namespace):
     print(f"db polimixina: {db_polimixina}  ")
     print(f"db outros mut: {db_outrosMut}  ")
     print(f"kraken2_install: {kraken2_install}  ")
+    print(f"kraken_db: {kraken_db}  ")
     print(f"unicycler: {unicycler} ")
     print(f"fastANI: {fastANI} ")
     print(f"lista: {lista}  ")
@@ -210,9 +214,8 @@ def pipeline(args: Namespace):
     # Identificar especie usando o kraken
 
     print('Run Kraken')
-    kraken_line = (f"{kraken2_install}/kraken2 "
-                   f"--db {kraken2_install}/minikraken2_v2_8GB"
-                   "_201904_UPDATE "
+    kraken_line = (f"{kraken2_install} "
+                   f"--db {kraken_db} "
                    f"--use-names --paired {R1} {R2} "
                    f"--output out_kraken --threads {THREADS}")
     run_command_line(kraken_line)
@@ -253,7 +256,9 @@ def pipeline(args: Namespace):
     # mod 11.05.22
     if (re.findall(re.compile(r'\w+\s\w.*', re.I), check_especies)):
         check_especies = check_especies.strip()
-        genero, especie = check_especies.split(" ")
+        split_especies = check_especies.split(" ")
+        genero = split_especies[0]
+        especie = split_especies[1]
         # print "$genero\n$especie\n";
         # Associar o nome da especie ao banco do mlst e gravar o nome que sera
         # dado como resultado final
@@ -635,12 +640,48 @@ def pipeline(args: Namespace):
                 'COV_DB:' + lines_blast[6] + '|' + ' '
             select_imprimir.append(out_blast)
             imprimir += f"\n{lines_blast[5]}"
-            mongo_client.save("plasmid", "<br>".join(select_imprimir))
-    pathlib.Path(abricate_out).unlink(missing_ok=True)
     gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
 
-    ###########################################################################
+    mongo_client.save("plasmid", "<br>".join(select_imprimir))
+    pathlib.Path(abricate_out).unlink(missing_ok=True)
 
+    ###########################################################################
+    
+    print(f"Run MLST for {especie_mlst}")
+
+    # se nao tem mlst disponivel, ai tem que avisar
+    # mod 26-08-22
+    mlst_line= (f"{mlst_install} --threads {THREADS} --exclude abaumannii --csv "
+                f"{caminho1}/{sample}/unicycler/assembly.fasta > "
+                f"{caminho1}/{sample}/unicycler/mlst.csv")
+
+    run_command_line(mlst_line)
+
+    mlst_result = (f"{caminho1}/{sample}/unicycler/mlst.csv")
+    #will create file, if it exists will do nothing
+    #mlst_result.touch(exist_ok=True)
+
+    with open(mlst_result, "r") as IN3:
+        line = IN3.readline().rstrip("\n")  # single line file
+        out_mlst = line.split(",")
+        scheme_mlst = out_mlst[1]
+        ST = out_mlst[2]
+        if ST != "-":
+                imprimir = ST
+                mongo_client.save('mlst', imprimir)
+                # para o gal
+                gal_file.write((f"Clone ST {path.basename(imprimir)} "
+                            "(determinado por MLST)\n"))
+                print(f"Scheme used {scheme_mlst} ")
+        if scheme_mlst == "-":
+                imprimir = "Not available"
+                mongo_client.save('mlst', imprimir)
+                # para o gal
+                gal_file.write((f"Clone ST {path.basename(imprimir)} "
+                            "(determinado por MLST)\n"))
+                print(f"Scheme used {scheme_mlst} ")
+
+    """
     print(f"Run MLST for {especie_mlst}")
 
     MLST_result = (f"{caminho1}/{sample}"
@@ -697,16 +738,18 @@ def pipeline(args: Namespace):
                 mongo_client.save('mlst', imprimir)
                 # para o gal
                 gal_file.write(f"Clone ST {path.basename(imprimir)}"
-                               " (determinado por MLST)\n")
-        m = re.search(r'.*sequence_type":\s"(Unknown)".*', line, re.IGNORECASE)
-        if m:
-            ST = m.group(1)
+                               " (determinado por MLST)\n") 
+        #m = re.search(r'.*sequence_type":\s"(Unknown)".*', line, re.IGNORECASE)
+        if not m:
+        #if m:
+        #    ST = m.group(1)
             # print OUT2 "Unknown\t";
             imprimir = 'Unknown'
             mongo_client.save('mlst', imprimir)
             # para o gal
             gal_file.write((f"Clone ST {path.basename(imprimir)} "
                             "(determinado por MLST)\n"))
+    """
 
     mongo_client.save('mutacoes_poli', "<br>".join(result2))
     gal_file.write("Mutações polimixina: %s" % "<br>".join(result2))
