@@ -113,7 +113,7 @@ def pipeline(args: Namespace):
     ##################################################
     # rodar unicycler
     print('Run Unicycler ')
-    unicycler_line = (f"{unicycler}  -1 {R1} -2 {R2} "
+    unicycler_line = (f"source /home/melise/teste_cabgen/python3/bin/activate && {unicycler}  -1 {R1} -2 {R2} "
                       f"-o {caminho1}/{path.basename(sample)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS} --spades_path "
