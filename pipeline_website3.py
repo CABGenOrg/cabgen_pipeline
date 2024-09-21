@@ -5,6 +5,7 @@ import re
 import sys
 import shutil
 import pathlib
+import os
 from os import path, makedirs
 from argparse import Namespace
 from src.handle_database import MongoSaver
@@ -163,6 +164,11 @@ def pipeline(args: Namespace):
     # Copiar o arquivo assembly.fasta para a pasta do CheckM checkM_bins
     makedirs("checkM_bins", exist_ok=True)
     shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
+
+    if os.path.exists(destination_path):
+        print(f"{montagem} has been successfully copied to checkM_bins.")
+    else:
+        print(f"Failed to copy {montagem} to checkM_bins.")
 
     # rodar o CheckM
     checkM_line = ("checkm lineage_wf -x fasta checkM_bins checkM_bins "
