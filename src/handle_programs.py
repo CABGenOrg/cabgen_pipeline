@@ -15,20 +15,28 @@ def run_command_line(command_line: str) -> str:
         raise ValueError("The command_line argument cannot be empty.")
 
     try:
-        result = run(command_line, shell=True, check=True,
-                     text=True, capture_output=True)
+        result = run(
+            command_line,
+            shell=True,
+            check=True,           
+            text=True,            
+            capture_output=True   
+        )
 
         if result.returncode != 0:
             raise RuntimeError(
                 f"Command '{command_line}' failed with error: {result.stderr}")
+        
         return result.stdout
 
     except CalledProcessError as error:
-        raise CalledProcessError(error.returncode, error.cmd,
-                                 output=error.output,
-                                 stderr=error.stderr)
+        raise RuntimeError(
+            f"Command '{error.cmd}' failed with return code {error.returncode}. "
+            f"Output: {error.output}. Error: {error.stderr}"
+        )
+
     except Exception as error:
-        raise Exception(f"An error occurred: {error}")
+        raise RuntimeError(f"An error occurred: {error}")
 
 
 def run_blastx(contig_file: str, blast_db_path: str, sample: str,

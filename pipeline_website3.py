@@ -3,6 +3,7 @@
 
 import re
 import sys
+import os
 import shutil
 import pathlib
 from os import path, makedirs
@@ -33,7 +34,7 @@ def pipeline(args: Namespace):
     nearest_sts = ''
     preidentificacao = []
     # resultadoANI = ''
-    THREADS = "16"  # new one will have 32
+    THREADS = 64  # new one will have 32
 
     sys.argv = sys.argv[1:]  # dict(perllib.Array(sys.argv)[1:])
     # use alinhamento_poli_truncation;
@@ -113,11 +114,10 @@ def pipeline(args: Namespace):
     ##################################################
     # rodar unicycler
     print('Run Unicycler ')
-    unicycler_line = (f"source /home/melise/teste_cabgen/python3/bin/activate && {unicycler}  -1 {R1} -2 {R2} "
+    unicycler_line = (f"{unicycler} -1 {R1} -2 {R2} "
                       f"-o {caminho1}/{path.basename(sample)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
-                      f"-t {THREADS} --spades_path "
-                      "/opt/SPAdes-4.0.0-Linux/bin/spades.py")
+                      f"-t {THREADS}")
     program_output = run_command_line(unicycler_line)
     
     if program_output:
@@ -161,26 +161,39 @@ def pipeline(args: Namespace):
     ###########################################################################
     # Rodar o CheckM para saber qualidade da corrida
     # Copiar o arquivo assembly.fasta para a pasta do CheckM checkM_bins
-    makedirs("checkM_bins", exist_ok=True)
-    shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
+    #makedirs("checkM_bins", exist_ok=True)
+    makedirs(f"{caminho1}/{sample}/checkM_bins", exist_ok=True)
+    checkM_bins = (f"{caminho1}/{sample}/checkM_bins")
+    #shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
+
+    source_path = os.path.join(".", f"{montagem}")
+    destination_path = os.path.join(".", f"{checkM_bins}")
+
+    shutil.copy(source_path, destination_path)
+
+    #check if the checkM_bin was created
+    #if os.path.exists(destination_path):
+    #    print(f"{montagem} has been successfully copied to {checkM_bins}")
+    #else:
+    #    print(f"Failed to copy {montagem} to {checkM_bins}")
 
     # rodar o CheckM
-    checkM_line = ("checkm lineage_wf -x fasta checkM_bins checkM_bins "
+    checkM_line = (f"checkm lineage_wf -x fasta {checkM_bins} {checkM_bins} "
                    f"--threads {THREADS} --pplacer_threads {THREADS}")
-    checkM_qa_line = (f"checkm qa -o 2 -f checkM_bins/{sample}"
-                      "_resultados --tab_table checkM_bins/lineage.ms "
-                      f"checkM_bins --threads {THREADS}")
+    checkM_qa_line = (f"checkm qa -o 2 -f {checkM_bins}/{sample}"
+                      f"_resultados --tab_table {checkM_bins}/lineage.ms "
+                      f"{checkM_bins} --threads {THREADS}")
     
     print('Run CheckM ')
     run_command_line(checkM_line)
     run_command_line(checkM_qa_line)
     # apagar arquivos gerados, deixando apenas resultados
-    shutil.rmtree('checkM_bins/bins', ignore_errors=True)
-    shutil.rmtree('checkM_bins/storage', ignore_errors=True)
+    shutil.rmtree(f"{checkM_bins}/bins", ignore_errors=True)
+    shutil.rmtree(f"{checkM_bins}/storage", ignore_errors=True)
     # MELISE: NAO ENTENDI PORQUE AQUI NÃO REMOVER OS ARQUIVOS
-    pathlib.Path('checkM_bins/assembly.fasta').unlink(missing_ok=True)
-    pathlib.Path('checkM_bins/lineage.ms').unlink(missing_ok=True)
-    pathlib.Path('checkM_bins/checkm.log').unlink(missing_ok=True)
+    pathlib.Path(f"{checkM_bins}/assembly.fasta").unlink(missing_ok=True)
+    pathlib.Path(f"{checkM_bins}/lineage.ms").unlink(missing_ok=True)
+    pathlib.Path(f"{checkM_bins}/checkm.log").unlink(missing_ok=True)
 
     # pegar o resultado da contaminacao
 
@@ -190,7 +203,7 @@ def pipeline(args: Namespace):
 
     genome_size = 1
 
-    with open(f"checkM_bins/{sample}_resultados") as IN_check:
+    with open(f"{checkM_bins}/{sample}_resultados") as IN_check:
         next(IN_check)  # ignore header
         for row in IN_check:
             # remove \n of the line end
@@ -216,18 +229,18 @@ def pipeline(args: Namespace):
     print('Run Kraken')
     kraken_line = (f"{kraken2_install} "
                    f"--db {kraken_db} "
-                   f"--use-names --paired {R1} {R2} "
-                   f"--output out_kraken --threads {THREADS}")
+                   f"--use-names --paired {R1} {R2} --output "
+                   f"{caminho1}/{sample}/out_kraken --threads {THREADS}")
     run_command_line(kraken_line)
 
     print("splitting output into %s equal files" % THREADS)
     preffix = "krk"
     splitter_line = (f"split --numeric-suffixes=1 -n l/{THREADS} "
-                     f"out_kraken {preffix}")
+                     f"{caminho1}/{sample}/out_kraken {preffix}")
     run_command_line(splitter_line)
 
     maior_repeticao, segunda_repeticao, \
-        first_count, second_count = count_kraken_words("out_kraken")
+        first_count, second_count = count_kraken_words(f"{caminho1}/{sample}/out_kraken")
 
     # print "$maior_repeticao\n$segunda_repeticao\n";
 
@@ -388,7 +401,7 @@ def pipeline(args: Namespace):
 
         fastani_line = (f"{fastANI} -q {caminho1}/"
                         f"{sample}/unicycler/assembly.fasta "
-                        f"--rl {lista_especie} -o {sample}_out-fastANI "
+                        f"--rl {lista_especie} -o {caminho1}/{sample}/{sample}_out-fastANI "
                         f"--threads {THREADS}")
         run_command_line(fastani_line)
 
@@ -468,13 +481,14 @@ def pipeline(args: Namespace):
     ###########################################################################
     # Rodar ABRICATE
     # Para resistencia usando o ResFinder (porque so tem resistencia adquirida)
-    abricate_out = f"{sample}_outAbricateRes"
+    abricate_out = f"{caminho1}/{sample}/{sample}_outAbricateRes"
 
     print('Run Abricate - ResFinder ')
 
     abricate_line = (f"{caminho_abricate} --db resfinder "
-                     f"{caminho1}/{sample}/prokka"
-                     f"/genome.ffn > {abricate_out} --threads {THREADS}")
+                     f"{caminho1}/{sample}/prokka/genome.ffn "
+                     f"> {abricate_out} --threads {THREADS}")
+    print(f"{abricate_line}")
     run_command_line(abricate_line)
 
     selected = get_abricate_result(abricate_out)
@@ -577,12 +591,18 @@ def pipeline(args: Namespace):
 
     # imprimir resultados com a classe do antimicrobiano
 
-    mongo_client.save("gene", "<br>".join(genes))
-    mongo_client.save("resfinder", "<br>".join(select_imprimir))
+    if not genes:
+        imprimir = 'Not found'
+        # print OUT2 "Nao encontrado\t";
+        mongo_client.save("gene", imprimir)
+        # para o gal
+    else:
+        mongo_client.save("gene", "<br>".join(genes))
+        mongo_client.save("resfinder", "<br>".join(select_imprimir))
 
     ###########################################################################
     # Rodar abricate para VFDB (Virulence factor)
-    abricate_out = f"{sample}_outAbricateVFDB"
+    abricate_out = f"{caminho1}/{sample}/{sample}_outAbricateVFDB"
     print('Run Abricate - VFDB ')
     abricate_line = (f"{caminho_abricate} --db vfdb "
                      f"{caminho1}/{sample}/prokka/"
@@ -594,23 +614,29 @@ def pipeline(args: Namespace):
     select_imprimir = []
 
     # ler o array selected
-    for n_l in selected:
-        # print "$n\n";
-        # separar as colunas do arquivo em elementos de um array
-        lines_blast = n_l.split("\t")
-        # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
-        # COV_DB:$lines_blast[6]\|";
-        out_blast = (f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} "
-                     f"ID:{lines_blast[10]} COV_Q:{lines_blast[9]} "
-                     f"COV_DB:{lines_blast[6]}| ")
-        select_imprimir.append(out_blast)
-
-    mongo_client.save('VFDB', "<br>".join(select_imprimir))
-    pathlib.Path(abricate_out).unlink(missing_ok=True)
+    if not selected:
+        # print OUT2 "Nao encontrado\t";
+        imprimir = 'Not found'
+        mongo_client.save('VFDB', imprimir)
+        # para o gal
+    else:
+        imprimir = ""
+        for n_l in selected:
+                # print "$n\n";
+                # separar as colunas do arquivo em elementos de um array
+                lines_blast = n_l.split("\t")
+                # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
+                # COV_DB:$lines_blast[6]\|";
+                out_blast = (f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} "
+                            f"ID:{lines_blast[10]} COV_Q:{lines_blast[9]} "
+                            f"COV_DB:{lines_blast[6]}| ")
+                select_imprimir.append(out_blast)
+                mongo_client.save('VFDB', "<br>".join(select_imprimir))
+    #pathlib.Path(abricate_out).unlink(missing_ok=True)
 
     ###########################################################################
     # Rodar abricate para PlasmidFinder
-    abricate_out = f"{sample}_outAbricatePlasmid"
+    abricate_out = f"{caminho1}/{sample}/{sample}_outAbricatePlasmid"
     print('Run Abricate - PlasmidFinder ')
     abricate_line = (f"{caminho_abricate} --db plasmidfinder "
                      f"{caminho1}/{sample}/unicycler"
@@ -622,8 +648,8 @@ def pipeline(args: Namespace):
     select_imprimir = []
 
     # ler o array selected
-    imprimir = 'Not found'
     if not selected:
+        imprimir = 'Not found'
         # print OUT2 "Nao encontrado\t";
         mongo_client.save('plasmid', imprimir)
         # para o gal
@@ -640,10 +666,11 @@ def pipeline(args: Namespace):
                 'COV_DB:' + lines_blast[6] + '|' + ' '
             select_imprimir.append(out_blast)
             imprimir += f"\n{lines_blast[5]}"
+            mongo_client.save("plasmid", "<br>".join(select_imprimir))
+
     gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
 
-    mongo_client.save("plasmid", "<br>".join(select_imprimir))
-    pathlib.Path(abricate_out).unlink(missing_ok=True)
+    #pathlib.Path(abricate_out).unlink(missing_ok=True)
 
     ###########################################################################
     
@@ -653,7 +680,7 @@ def pipeline(args: Namespace):
     # mod 26-08-22
     mlst_line= (f"{mlst_install} --threads {THREADS} --exclude abaumannii --csv "
                 f"{caminho1}/{sample}/unicycler/assembly.fasta > "
-                f"{caminho1}/{sample}/unicycler/mlst.csv")
+                f"{caminho1}/{sample}/mlst.csv")
 
     run_command_line(mlst_line)
 

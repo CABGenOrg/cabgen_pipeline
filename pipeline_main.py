@@ -48,7 +48,7 @@ def main():
                         type=str,
                         help=("Arquivos do banco de dados "
                               "usado pelo Kraken2."))
-    parser.add_argument("--unicycler", default="/home/melise/teste_cabgen/Unicycler/unicycler-runner.py",
+    parser.add_argument("--unicycler", default="/usr/local/bin/unicycler",
                         type=str,
                         help=("Arquivos e bin do Unicycler "
                               "usado para montagem do genoma."))
