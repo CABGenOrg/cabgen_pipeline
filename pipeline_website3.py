@@ -82,7 +82,7 @@ def pipeline(args: Namespace):
     # entrar com o caminho da pastar onde esta instalado o kraken2 ex: kraken2
     kraken2_install = args.kraken2
 
-    #banco de dados para kraken
+    # banco de dados para kraken
     kraken_db = args.kraken_db
 
     # entrar com o caminho do unicycler
@@ -120,7 +120,7 @@ def pipeline(args: Namespace):
                       "unicycler --min_fasta_length 500 --mode conservative "
                       f"-t {THREADS}")
     program_output = run_command_line(unicycler_line)
-    
+
     if program_output:
         print(program_output)
     else:
@@ -162,20 +162,20 @@ def pipeline(args: Namespace):
     ###########################################################################
     # Rodar o CheckM para saber qualidade da corrida
     # Copiar o arquivo assembly.fasta para a pasta do CheckM checkM_bins
-    #makedirs("checkM_bins", exist_ok=True)
+    # makedirs("checkM_bins", exist_ok=True)
     makedirs(f"{caminho1}/{sample}/checkM_bins", exist_ok=True)
     checkM_bins = (f"{caminho1}/{sample}/checkM_bins")
-    #shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
+    # shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
 
     source_path = os.path.join(".", f"{montagem}")
     destination_path = os.path.join(".", f"{checkM_bins}")
 
     shutil.copy(source_path, destination_path)
 
-    #check if the checkM_bin was created
-    #if os.path.exists(destination_path):
+    # check if the checkM_bin was created
+    # if os.path.exists(destination_path):
     #    print(f"{montagem} has been successfully copied to {checkM_bins}")
-    #else:
+    # else:
     #    print(f"Failed to copy {montagem} to {checkM_bins}")
 
     if os.path.exists(destination_path):
@@ -189,7 +189,7 @@ def pipeline(args: Namespace):
     checkM_qa_line = (f"checkm qa -o 2 -f {checkM_bins}/{sample}"
                       f"_resultados --tab_table {checkM_bins}/lineage.ms "
                       f"{checkM_bins} --threads {THREADS}")
-    
+
     print('Run CheckM ')
     run_command_line(checkM_line)
     run_command_line(checkM_qa_line)
@@ -246,7 +246,8 @@ def pipeline(args: Namespace):
     run_command_line(splitter_line)
 
     maior_repeticao, segunda_repeticao, \
-        first_count, second_count = count_kraken_words(f"{caminho1}/{sample}/out_kraken")
+        first_count, second_count = count_kraken_words(
+            f"{caminho1}/{sample}/out_kraken")
 
     # print "$maior_repeticao\n$segunda_repeticao\n";
 
@@ -310,7 +311,7 @@ def pipeline(args: Namespace):
         fasta_polimixina = (f"{db_polimixina}/"
                             "proteins_pseudo_poli.fasta")
         fasta_outros = (f"{db_outrosMut}"
-                            "/proteins_outrasMut_pseudo.fasta")
+                        "/proteins_outrasMut_pseudo.fasta")
         bacteria_dict: BacteriaDict = {"species": resultado_final_especie,
                                        "assembly_file": montagem,
                                        "sample": sample,
@@ -381,17 +382,18 @@ def pipeline(args: Namespace):
             lista_especie = (f"{lista}"
                              "/kleb_database/lista-kleb")
         elif re.match(r"acinetobacter.*", resultado_final_especie, re.I):
-            especie_mlst = 'abaumannii_2' # perform MLST for any species in the genus Acinetobacter
+            # perform MLST for any species in the genus Acinetobacter
+            especie_mlst = 'abaumannii_2'
             if resultado_final_especie in ("acinetobacterbaumannii",
-                                         "acinetobacternosocomialis",
-                                         "acinetobacterpittii",
-                                         "acinetobacterseifertii",
-                                         "acinetobacterdijkshoorniae",
-                                         "acinetobacterlactucae",
-                                         "acinetobactercalcoaceticus"):
+                                           "acinetobacternosocomialis",
+                                           "acinetobacterpittii",
+                                           "acinetobacterseifertii",
+                                           "acinetobacterdijkshoorniae",
+                                           "acinetobacterlactucae",
+                                           "acinetobactercalcoaceticus"):
                 # $printar_especies = "Acinetobacter baumannii";
                 lista_especie = (f"{lista}"
-                                "/fastANI_acineto/list-acineto")
+                                 "/fastANI_acineto/list-acineto")
         elif resultado_final_especie in ("enterobactercloacae",
                                          "enterobacterhormaechei",
                                          "enterobacterasburiae",
@@ -628,17 +630,17 @@ def pipeline(args: Namespace):
     else:
         imprimir = ""
         for n_l in selected:
-                # print "$n\n";
-                # separar as colunas do arquivo em elementos de um array
-                lines_blast = n_l.split("\t")
-                # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
-                # COV_DB:$lines_blast[6]\|";
-                out_blast = (f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} "
-                            f"ID:{lines_blast[10]} COV_Q:{lines_blast[9]} "
-                            f"COV_DB:{lines_blast[6]}| ")
-                select_imprimir.append(out_blast)
-                mongo_client.save('VFDB', "<br>".join(select_imprimir))
-    #pathlib.Path(abricate_out).unlink(missing_ok=True)
+            # print "$n\n";
+            # separar as colunas do arquivo em elementos de um array
+            lines_blast = n_l.split("\t")
+            # print OUT2 "$lines_blast[5] ID:$lines_blast[10] COV_Q:$lines_blast[9]
+            # COV_DB:$lines_blast[6]\|";
+            out_blast = (f"{lines_blast[1]}: {lines_blast[5]} {lines_blast[13]} "
+                         f"ID:{lines_blast[10]} COV_Q:{lines_blast[9]} "
+                         f"COV_DB:{lines_blast[6]}| ")
+            select_imprimir.append(out_blast)
+            mongo_client.save('VFDB', "<br>".join(select_imprimir))
+    # pathlib.Path(abricate_out).unlink(missing_ok=True)
 
     ###########################################################################
     # Rodar abricate para PlasmidFinder
@@ -676,23 +678,23 @@ def pipeline(args: Namespace):
 
     gal_file.write(f"Plasmídeos encontrados:{path.basename(imprimir)}\n")
 
-    #pathlib.Path(abricate_out).unlink(missing_ok=True)
+    # pathlib.Path(abricate_out).unlink(missing_ok=True)
 
     ###########################################################################
-    
+
     print(f"Run MLST for {especie_mlst}")
 
     # se nao tem mlst disponivel, ai tem que avisar
     # mod 26-08-22
-    mlst_line= (f"{mlst_install} --threads {THREADS} --exclude abaumannii --csv "
-                f"{caminho1}/{sample}/unicycler/assembly.fasta > "
-                f"{caminho1}/{sample}/mlst.csv")
+    mlst_line = (f"{mlst_install} --threads {THREADS} --exclude abaumannii --csv "
+                 f"{caminho1}/{sample}/unicycler/assembly.fasta > "
+                 f"{caminho1}/{sample}/mlst.csv")
 
     run_command_line(mlst_line)
 
-    mlst_result = (f"{caminho1}/{sample}/unicycler/mlst.csv")
-    #will create file, if it exists will do nothing
-    #mlst_result.touch(exist_ok=True)
+    mlst_result = (f"{caminho1}/{sample}/mlst.csv")
+    # will create file, if it exists will do nothing
+    # mlst_result.touch(exist_ok=True)
 
     with open(mlst_result, "r") as IN3:
         line = IN3.readline().rstrip("\n")  # single line file
@@ -700,19 +702,19 @@ def pipeline(args: Namespace):
         scheme_mlst = out_mlst[1]
         ST = out_mlst[2]
         if ST != "-":
-                imprimir = ST
-                mongo_client.save('mlst', imprimir)
-                # para o gal
-                gal_file.write((f"Clone ST {path.basename(imprimir)} "
+            imprimir = ST
+            mongo_client.save('mlst', imprimir)
+            # para o gal
+            gal_file.write((f"Clone ST {path.basename(imprimir)} "
                             "(determinado por MLST)\n"))
-                print(f"Scheme used {scheme_mlst} ")
+            print(f"Scheme used {scheme_mlst} ")
         if scheme_mlst == "-":
-                imprimir = "Not available"
-                mongo_client.save('mlst', imprimir)
-                # para o gal
-                gal_file.write((f"Clone ST {path.basename(imprimir)} "
+            imprimir = "Not available"
+            mongo_client.save('mlst', imprimir)
+            # para o gal
+            gal_file.write((f"Clone ST {path.basename(imprimir)} "
                             "(determinado por MLST)\n"))
-                print(f"Scheme used {scheme_mlst} ")
+            print(f"Scheme used {scheme_mlst} ")
 
     """
     print(f"Run MLST for {especie_mlst}")
