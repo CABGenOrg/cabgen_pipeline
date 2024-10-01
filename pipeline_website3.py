@@ -523,7 +523,7 @@ def pipeline(args: Namespace):
             # print OUT2 "$lines_blast[5] (carbapenemase)\n";
             genes.append(lines_blast[5] + " (carbapenemase)" +
                          "(allele confidence " + lines_blast[10] + ")")
-        elif re.match(r'.*(blaOXA-51|blaOXA-64|blaOXA-65|blaOXA-66|blaOXA-69|blaOXA-90|blaOXA-259|blaOXA-343).*', lines_blast[5], re.I):
+        elif re.match(r'.*(blaOXA-51|blaOXA-64|blaOXA-65|blaOXA-66|blaOXA-69|blaOXA-90|blaOXA-125|blaOXA-259|blaOXA-343|blaOXA-407).*', lines_blast[5], re.I):
             # print OUT2 "$lines_blast[5] (OXA-51-like carbapenemase)\n";
             genes.append(lines_blast[5] + " (OXA-51-like carbapenemase)" +
                          "(allele confidence " + lines_blast[10] + ")")
