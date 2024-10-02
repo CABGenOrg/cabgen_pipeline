@@ -1,7 +1,9 @@
 import re
-from typing import TypedDict, List, Tuple
-from src.handle_programs import run_blastx
 from collections import Counter
+from typing import List, Tuple, Union
+from src.handle_programs import run_blastx
+from src.types.SpeciesDict import SpeciesDict
+from src.types.BacteriaDict import BacteriaDict
 from src.handle_mutations import find_acineto_mutations, \
     find_ecloacae_mutations, find_kleb_mutations, find_pseudo_mutations
 
@@ -10,16 +12,6 @@ choose_analysis = {"pseudomonasaeruginosa": find_pseudo_mutations,
                    "Enterobacter_cloacae_subsp_cloacae":
                    find_ecloacae_mutations,
                    "Acinetobacter_baumannii": find_acineto_mutations}
-
-
-class BacteriaDict(TypedDict):
-    species: str
-    assembly_file: str
-    sample: str
-    others_db_path: str
-    poli_db_path: str
-    others_outfile_suffix: str
-    poli_outfile_suffix: str
 
 
 def run_blast_and_check_mutations(
@@ -61,7 +53,7 @@ def run_blast_and_check_mutations(
 def get_abricate_result(file_path: str):
     """
     Processes Abricate result file and returns lines with identity > 90 and
-    coverage > 90 or containing gene names starting with 'Van'.
+    coverage > 90 or containing gene names starting with "Van".
 
     Args:
         file_path (str): The path to the abricate result file, a tab-delimited
@@ -79,7 +71,7 @@ def get_abricate_result(file_path: str):
         raise FileNotFoundError(f"File {file_path} not open.")
 
     for line in lines:
-        fields = line.split('\t')
+        fields = line.split("\t")
 
         if len(fields) < 11:
             continue
@@ -93,7 +85,7 @@ def get_abricate_result(file_path: str):
             continue
 
         if (coverage > 90 and identity > 90) or \
-                re.search(r'Van.*', gene, re.I):
+                re.search(r"Van.*", gene, re.I):
             results.append(line)
 
     return results
@@ -126,3 +118,120 @@ def count_kraken_words(kraken_output: str) -> Tuple[str, str, int, int]:
     second_count = most_common_species[1][1]
 
     return first_most_common, second_most_common, first_count, second_count
+
+
+def build_species_data(species_info: SpeciesDict) -> Tuple[dict, dict]:
+    others_db_path = species_info.get("others_db_path")
+    poli_db_path = species_info.get("poli_db_path")
+    fastani_path = species_info.get("fastani_db_path")
+
+    species_data = {
+        "pseudomonasaeruginosa": {
+            "mlst": "paeruginosa",
+            "display_name": "Pseudomonas aeruginosa",
+            "poli_fasta": f"{poli_db_path}/proteins_pseudo_poli.fasta",
+            "others_fasta": (f"{others_db_path}/"
+                             "proteins_outrasMut_pseudo.fasta"),
+            "run_blast": True
+        },
+        "escherichiacoli": {
+            "mlst": "ecoli",
+            "display_name": "Escherichia coli"
+        },
+        "staphylococcusaureus": {
+            "mlst": "saureus",
+            "display_name": "Staphylococcus aureus"
+        },
+        "streptococcuspyogenes": {
+            "mlst": "spyogenes",
+            "display_name": "Streptococcus pyogenes"
+        },
+        "pseudomonasputida": {
+            "mlst": "pputida",
+            "display_name": "Pseudomonas putida"
+        },
+        "listeriamonocytogenes": {
+            "mlst": "lmonocytogenes",
+            "display_name": "Listeria monocytogenes"
+        },
+        "enterococcusfaecalis": {
+            "mlst": "efaecalis",
+            "display_name": "Enterococcus faecalis"
+        },
+        "klebsiellaoxytoca": {
+            "mlst": "koxytoca",
+            "display_name": "Klebsiella oxytoca"
+        },
+        "enterococcusfaecium": {
+            "mlst": "efaecium",
+            "display_name": "Enterococcus faecium"
+        },
+        "klebsiellapneumoniae": {
+            "mlst": "kpneumoniae",
+            "display_name": "Klebsiella pneumoniae",
+            "poli_fasta": f"{poli_db_path}/proteins_kleb_poli.fasta",
+            "others_fasta": f"{others_db_path}/proteins_outrasMut_kleb.fasta",
+            "run_blast": True,
+            "fastani_list": f"{fastani_path}/kleb_database/lista-kleb"
+        }
+    }
+
+    fastani_species = {
+        "klebsiellapneumoniae": {
+            "mlst": "kpneumoniae",
+            "display_name": "Klebsiella pneumoniae",
+            "poli_fasta": f"{poli_db_path}/proteins_kleb_poli.fasta",
+            "others_fasta": f"{others_db_path}/proteins_outrasMut_kleb.fasta",
+            "fastani_list": f"{fastani_path}/kleb_database/lista-kleb"
+        },
+        "enterobacter_species": {
+            "mlst": "ecloacae",
+            "fastani_list": f"{fastani_path}/fastANI/list_entero"
+        },
+        "acinetobacter_species": {
+            "mlst": "abaumannii_2",
+            "fastani_list": f"{fastani_path}/fastANI_acineto/list-acineto"
+        }
+    }
+
+    return species_data, fastani_species
+
+
+def handle_species(species_info: SpeciesDict, species_data: dict) -> \
+        Tuple[Union[Tuple[List[str], List[str]], None], Union[str, None],
+              Union[str, None]]:
+    species = species_info.get("species")
+    desired_species_data = species_data.get(species)
+
+    if desired_species_data:
+        assembly = species_info.get("assembly")
+        sample = species_info.get("sample")
+
+        mlst_species = desired_species_data.get("mlst")
+        print_species = desired_species_data.get("display_name")
+        poli_fasta = desired_species_data.get("poli_fasta")
+        others_fasta = desired_species_data.get("others_fasta")
+
+        if poli_fasta and others_fasta:
+            bacteria_dict: BacteriaDict = {
+                "species": species,
+                "assembly_file": assembly,
+                "sample": str(sample),
+                "others_db_path": others_fasta,
+                "poli_db_path": poli_fasta,
+                "others_outfile_suffix": "blastOthers",
+                "poli_outfile_suffix": "blastPoli"
+            }
+            return run_blast_and_check_mutations(bacteria_dict), \
+                print_species, mlst_species
+        return None, print_species, mlst_species
+
+    return None, None, None
+
+
+def identify_bacteria_species(species_info: SpeciesDict):
+    species_data, _ = build_species_data(species_info)
+
+    blast_result, display_name, mlst = handle_species(species_info,
+                                                      species_data)
+    return blast_result, display_name, mlst

@@ -3,10 +3,8 @@
 
 import re
 import sys
-import os
 import shutil
 import pathlib
-import os
 from os import path, makedirs
 from argparse import Namespace
 from src.handle_database import MongoSaver
@@ -114,7 +112,7 @@ def pipeline(args: Namespace):
     mongo_client.connect()
     ##################################################
     # rodar unicycler
-    print('Run Unicycler ')
+    print('Run Unicycler')
     unicycler_line = (f"{unicycler} -1 {R1} -2 {R2} "
                       f"-o {caminho1}/{path.basename(sample)}/"
                       "unicycler --min_fasta_length 500 --mode conservative "
@@ -167,8 +165,8 @@ def pipeline(args: Namespace):
     checkM_bins = (f"{caminho1}/{sample}/checkM_bins")
     # shutil.copy(path.join(".", f"{montagem}"), path.join(".", 'checkM_bins'))
 
-    source_path = os.path.join(".", f"{montagem}")
-    destination_path = os.path.join(".", f"{checkM_bins}")
+    source_path = path.join(".", f"{montagem}")
+    destination_path = path.join(".", f"{checkM_bins}")
 
     shutil.copy(source_path, destination_path)
 
@@ -178,7 +176,7 @@ def pipeline(args: Namespace):
     # else:
     #    print(f"Failed to copy {montagem} to {checkM_bins}")
 
-    if os.path.exists(destination_path):
+    if path.exists(destination_path):
         print(f"{montagem} has been successfully copied to checkM_bins.")
     else:
         print(f"Failed to copy {montagem} to checkM_bins.")
