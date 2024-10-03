@@ -708,8 +708,15 @@ def pipeline(args: Namespace):
             gal_file.write((f"Clone ST {path.basename(imprimir)} "
                             "(determinado por MLST)\n"))
             print(f"Scheme used {scheme_mlst} ")
+        if ST == "-":
+            imprimir = "New ST"
+            mongo_client.save('mlst', imprimir)
+            # para o gal
+            gal_file.write((f"Clone ST {path.basename(imprimir)} "
+                            "(determinado por MLST)\n"))
+            print(f"Scheme used {scheme_mlst} ")
         if scheme_mlst == "-":
-            imprimir = "Not available"
+            imprimir = "Not available for this specie"
             mongo_client.save('mlst', imprimir)
             # para o gal
             gal_file.write((f"Clone ST {path.basename(imprimir)} "
