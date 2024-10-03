@@ -417,7 +417,7 @@ def pipeline(args: Namespace):
         # Abrir o arquivo do output de distancia
         # array para guardar especies
 
-        with open(f"{sample}_out-fastANI", "r") as IN7:
+        with open(f"{caminho1}/{sample}/{sample}_out-fastANI", "r") as IN7:
             # first line only
             especiE = IN7.readline().rstrip("\n").split('\t')
             preidentificacao = especiE[1].split("/")
