@@ -6,7 +6,8 @@ from src.types.SpeciesDict import SpeciesDict
 from src.handle_programs import run_command_line
 from src.utils.handle_folders import delete_folders_and_files
 from src.handle_processing import count_kraken_words, build_species_data, \
-    identify_bacteria_species
+    identify_bacteria_species, get_abricate_result, process_resfinder, \
+    process_vfdb, process_plasmidfinder
 
 
 class CabgenPipeline:
@@ -15,7 +16,8 @@ class CabgenPipeline:
         self.read1 = read1
         self.read2 = read2
         self.output = output
-        self.threads = 16
+        self.threads = 16 if not getenv("THREADS") \
+            else int(getenv("THREADS"))  # type: ignore
         self.mongo_client = MongoSaver(self.sample)
         self.mongo_client.connect()
 
@@ -139,12 +141,12 @@ class CabgenPipeline:
                     row = row.rstrip("\n")
                     lines = row.split("\t")
                     self.genome_size = lines[8] or 1
-                    self.mongo_client.save('checkm_1', lines[5])
-                    self.mongo_client.save('checkm_2', lines[6])
-                    self.mongo_client.save('checkm_3', lines[8])
-                    self.mongo_client.save('checkm_4', lines[11])
+                    self.mongo_client.save("checkm_1", lines[5])
+                    self.mongo_client.save("checkm_2", lines[6])
+                    self.mongo_client.save("checkm_3", lines[8])
+                    self.mongo_client.save("checkm_4", lines[11])
                     self.contamination = lines[6] or 0
-                    self.mongo_client.save('sample', str(self.sample))
+                    self.mongo_client.save("sample", str(self.sample))
         except Exception as e:
             fatal_error(f"Failed to process checkM result.\n\n{e}")
 
@@ -180,7 +182,7 @@ class CabgenPipeline:
 
     def _process_species(self):
         try:
-            if (re.findall(re.compile(r'\w+\s\w.*', re.I), self.most_common)):
+            if (re.findall(re.compile(r"\w+\s\w.*", re.I), self.most_common)):
                 check_especies = self.most_common.strip()
                 split_especies = check_especies.split(" ")
                 genus = split_especies[0]
@@ -207,6 +209,13 @@ class CabgenPipeline:
                     or "acinetobacter" in species:
                 display_name, mlst_species = \
                     self._run_fastani(species_final_result)  # type: ignore
+
+            if blast_result:
+                self.others_mutations_result = blast_result[0]
+                self.poli_mutations_result = blast_result[1]
+            else:
+                self.others_mutations_result = []
+                self.poli_mutations_result = []
 
             if not display_name:
                 display_name = f"{species}"
@@ -252,7 +261,7 @@ class CabgenPipeline:
     def _save_species_result(self):
         try:
             if float(self.contamination) <= 10.:
-                self.mongo_client.save('especie', self.display_name)
+                self.mongo_client.save("especie", self.display_name)
             else:
                 first_repetition = self.most_common
                 first_count = self.first_count
@@ -261,9 +270,190 @@ class CabgenPipeline:
 
                 species_info = (f"{first_repetition} {first_count} "
                                 f"{second_repetition} {second_count}")
-                self.mongo_client.save('especie', species_info)
+                self.mongo_client.save("especie", species_info)
         except Exception as e:
             print(f"Failed to save species result.\n\n{e}")
 
+    def _run_abricate(self, db: str):
+        try:
+            if db.lower() == "resfinder":
+                print("Run Abricate - ResFinder ")
+                self.abricate_res_out = path.join(
+                    self.sample_directory, f"{self.sample}_outAbricateRes")
+            elif db.lower() == "vfdb":
+                print("Run Abricate - VFDB ")
+                self.abricate_vfdb_out = path.join(
+                    self.sample_directory, f"{self.sample}_outAbricateVFDB")
+            elif db.lower() == "plasmidfinder":
+                print("Run Abricate - PlasmidFinder ")
+                self.abricate_plasmid_out = path.join(
+                    self.sample_directory, f"{self.sample}_outAbricatePlasmid")
+            else:
+                raise ValueError("Abricate database invalid.")
+
+            abricate_line = (f"{self.abricate} --db {db} "
+                             f"{self.sample_directory}/prokka/genome.ffn "
+                             f"> {self.abricate_res_out} "
+                             f"--threads {self.threads}")
+            print(f"{abricate_line}")
+            run_command_line(abricate_line)
+        except Exception as e:
+            print(f"Failed to run Abricate with resfinder DB.\n\n{e}")
+
+    def _process_resfinder_result(self):
+        try:
+            abricate_result = get_abricate_result(
+                self.abricate_res_out)
+            gene_results, blast_out_results = process_resfinder(
+                abricate_result)
+
+            if not gene_results:
+                self.mongo_client.save("gene", "Not found")
+            else:
+                self.mongo_client.save("gene", "<br>".join(gene_results))
+                self.mongo_client.save(
+                    "resfinder", "<br>".join(blast_out_results))
+        except Exception as e:
+            print(f"Failed to process Abricate resfinder result.\n\n{e}")
+
+    def _process_vfdb_result(self):
+        try:
+            abricate_result = get_abricate_result(
+                self.abricate_vfdb_out)
+
+            if abricate_result:
+                blast_out_results = process_vfdb(abricate_result)
+                self.mongo_client.save("VFDB", "<br>".join(blast_out_results))
+            else:
+                self.mongo_client.save("VFDB", "Not Found")
+        except Exception as e:
+            print(f"Failed to process Abricate VFDB result.\n\n{e}")
+
+    def _process_plasmid_result(self):
+        try:
+            abricate_result = get_abricate_result(
+                self.abricate_plasmid_out)
+
+            if abricate_result:
+                blast_out_results = process_plasmidfinder(abricate_result)
+                self.mongo_client.save(
+                    "plasmid", "<br>".join(blast_out_results))
+            else:
+                self.mongo_client.save("plasmid", "Not Found")
+        except Exception as e:
+            print(f"Failed to process Abricate PlasmidFinder result.\n\n{e}")
+
+    def _process_abricate_result(self, db: str):
+        try:
+            if db.lower() == "resfinder":
+                self._process_resfinder_result()
+            elif db.lower() == "vfdb":
+                self._process_vfdb_result()
+            elif db.lower() == "plasmidfinder":
+                self._process_plasmid_result()
+            else:
+                raise ValueError("Abricate database invalid.")
+        except Exception as e:
+            print(f"Failed to process Abricate result.\n\n{e}")
+
+    def _run_mlst(self):
+        try:
+            print(f"Run MLST for {self.mlst_species}")
+            self.mlst_result_path = path.join(self.sample_directory,
+                                              "mlst.csv")
+            mlst_line = (f"{self.mlst} --threads {self.threads} "
+                         "--exclude abaumannii --csv "
+                         f"{self.assembly_path} > {self.mlst_result_path}")
+
+            run_command_line(mlst_line)
+        except Exception as e:
+            print(f"Failed to run MLST.\n\n{e}")
+
+    def _process_mlst(self):
+        try:
+            with open(self.mlst_result_path, "r") as inp:
+                line = inp.readline().rstrip("\n")
+                out_mlst = line.split(",")
+                scheme_mlst = out_mlst[1]
+                st = out_mlst[2]
+
+                if st != "-":
+                    result = st
+                    self.mongo_client.save('mlst', result)
+                    print(f"Scheme used {scheme_mlst}")
+                elif st == "-":
+                    result = "New ST"
+                    self.mongo_client.save('mlst', result)
+                    print(f"Scheme used {scheme_mlst}")
+                elif scheme_mlst == "-":
+                    result = "Not available for this specie"
+                    self.mongo_client.save('mlst', result)
+                    print(f"Scheme used {scheme_mlst}")
+
+            self.mongo_client.save('mutacoes_poli', "<br>".join(
+                self.poli_mutations_result))
+            self.mongo_client.save('mutacoes_outras', "<br>".join(
+                self.others_mutations_result))
+        except Exception as e:
+            print(f"Failed to process MLST result.\n\n{e}")
+
+    def _run_coverage(self):
+        try:
+            print('Run coverage')
+            catcmd = "cat"
+            res = run_command_line(f"file {self.read1}")
+            if res and (str(res).find("gzip compressed") > -1 or
+                        str(res).find("gzip compatible") > -1):
+                catcmd = "zcat"
+
+            zcat = f"echo $({catcmd} {self.read1} | wc -l)/4 | bc"
+            res_r1 = run_command_line(zcat)
+            n_reads1 = res_r1.rstrip("\n")
+
+            zcat2 = f"echo $({catcmd} {self.read2} | wc -l)/4 | bc"
+            res_r2 = run_command_line(zcat2)
+            n_reads2 = res_r2.rstrip("\n")
+
+            reads_sum = (float(n_reads1) + float(n_reads2))
+
+            zcat3 = (f"{catcmd} {self.read1} | awk '{{if(NR%4==2) "
+                     "{{count++; bases += length}} }} "
+                     "END{{print bases/count}}'")
+            res_avg = run_command_line(zcat3)
+            average_length = res_avg.rstrip("\n")
+
+            pre_coverage = (float(average_length) *
+                            reads_sum) / float(self.genome_size)
+
+            coverage = round(pre_coverage, 2)
+
+            self.mongo_client.save('coverage', str(coverage))
+        except Exception as e:
+            fatal_error(f"Failed to run coverage.\n\n{e}")
+
     def run(self):
-        pass
+        try:
+            # Starting the pipeline dependencies
+            self._check_params()
+            self._create_dirs()
+            self._load_programs()
+            self._check_programs()
+
+            # Starting pipeline run
+            self._run_unicycler()
+            self._run_prokka()
+            self._run_checkm()
+            self._process_checkm_result()
+            self._run_kraken2()
+            self._process_kraken2_result()
+            self._process_species()
+            self._save_species_result()
+            abricate_dbs = ["resfinder", "vfdb", "plasmidfinder"]
+            for db in abricate_dbs:
+                self._run_abricate(db)
+                self._process_abricate_result(db)
+            self._run_mlst()
+            self._process_mlst()
+            self._run_coverage()
+        except Exception as e:
+            fatal_error(f"Failed to run CABGen pipeline.\n\n{e}")

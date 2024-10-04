@@ -13,6 +13,54 @@ choose_analysis = {"pseudomonasaeruginosa": find_pseudo_mutations,
                    find_ecloacae_mutations,
                    "Acinetobacter_baumannii": find_acineto_mutations}
 
+resistance_pattern = re.compile(
+    r'(?P<carbapenemase>(blaKPC|blaNDM|blaVIM|blaIMP|blaSPM|blaOXA-23|'
+    r'blaOXA-24|blaOXA-25|blaOXA-26|blaOXA-27|blaOXA-48|blaOXA-58|'
+    r'blaOXA-72|blaOXA-98|blaOXA-116|blaOXA-117|blaOXA-160|blaOXA-175|'
+    r'blaOXA-176|blaOXA-253))|'
+    r'(?P<oxa_51_like>(blaOXA-51|blaOXA-64|blaOXA-65|blaOXA-66|blaOXA-69|'
+    r'blaOXA-90|blaOXA-125|blaOXA-259|blaOXA-343|blaOXA-407))|'
+    r'(?P<esbl>(blaTEM|blaSHV|blaADC|blaCTX-M|blaGES|blaOXA-(?!23|24|25|'
+    r'26|27|48|58|72|98|116|117|160|175|176|253|488|486)))|'
+    r'(?P<aminoglycosides_fluoroquinolones>(aac\(6\'\)-Ib-cr))|'
+    r'(?P<aminoglycosides>(aph|aac|rmt|aad))|'
+    r'(?P<chloramphenicol>(cat|cml|cmx|floR))|'
+    r'(?P<fluoroquinolones>(qnr|oqx))|'
+    r'(?P<sulfonamides>sul)|'
+    r'(?P<trimethoprim>dfrA)|'
+    r'(?P<tetracycline>tet)|'
+    r'(?P<erythromycin>ere)|'
+    r'(?P<lincosamides_macrolides_streptogramins>erm)|'
+    r'(?P<rifampicin>ARR)|'
+    r'(?P<macrolides>(mph|msr))|'
+    r'(?P<vancomycin>Van)|'
+    r'(?P<clindamycin>lsa)|'
+    r'(?P<polymyxin>mcr)',
+    re.I
+)
+
+resfinder_patterns = {
+    'carbapenemase': "(carbapenemase)",
+    'oxa_51_like': "(OXA-51-like carbapenemase)",
+    'esbl': "(ESBL)",
+    'aminoglycosides_fluoroquinolones': ("(resistance to aminoglycosides and "
+                                         "fluoroquinolones)"),
+    'aminoglycosides': "(resistance to aminoglycosides)",
+    'chloramphenicol': "(resistance to chloramphenicol)",
+    'fluoroquinolones': "(resistance to fluoroquinolones)",
+    'sulfonamides': "(resistance to sulfonamides)",
+    'trimethoprim': "(resistance to trimethoprim)",
+    'tetracycline': "(resistance to tetracycline)",
+    'erythromycin': "(resistance to erythromycin)",
+    'lincosamides_macrolides_streptogramins':
+        "(resistance to lincosamides, macrolides, and streptogramins)",
+    'rifampicin': "(resistance to rifampicin)",
+    'macrolides': "(resistance to macrolides)",
+    'vancomycin': "(resistance to vancomycin)",
+    'clindamycin': "(resistance to clindamycin)",
+    'polymyxin': "(resistance to polymyxin)"
+}
+
 
 def run_blast_and_check_mutations(
         bacteria_dict: BacteriaDict) -> Tuple[List[str], List[str]]:
@@ -50,7 +98,7 @@ def run_blast_and_check_mutations(
     return others_mutations_result, poli_mutations_result
 
 
-def get_abricate_result(file_path: str):
+def get_abricate_result(file_path: str) -> List[str]:
     """
     Processes Abricate result file and returns lines with identity > 90 and
     coverage > 90 or containing gene names starting with "Van".
@@ -235,3 +283,68 @@ def identify_bacteria_species(species_info: SpeciesDict):
     blast_result, display_name, mlst = handle_species(species_info,
                                                       species_data)
     return blast_result, display_name, mlst
+
+
+def process_resfinder(abricate_result: List[str]) -> Tuple[List[str],
+                                                           List[str]]:
+    gene_results = []
+    blast_out_results = []
+
+    for line in abricate_result:
+        blast_lines = line.split("\t")
+
+        id = blast_lines[10]
+        gene = blast_lines[5]
+        cov_q = blast_lines[9]
+        cov_db = blast_lines[6]
+
+        blast_out = (f"{gene} (ID: {id} COV_Q: {cov_q} COV_DB: {cov_db})")
+        blast_out_results.append(blast_out)
+
+        match = resistance_pattern.search(gene)
+        if match:
+            for group_name, resistance in resfinder_patterns.items():
+                if match.group(group_name):
+                    gene_results.append(f"{gene} {resistance} "
+                                        f"(allele confidence {id})")
+                    break
+        else:
+            gene_results.append(f"{gene} (allele confidence {id})")
+    return gene_results, blast_out_results
+
+
+def process_vfdb(abricate_result: List[str]) -> List[str]:
+    blast_out_results = []
+
+    for line in abricate_result:
+        blast_lines = line.split("\t")
+
+        id = blast_lines[10]
+        gene = blast_lines[5]
+        cov_q = blast_lines[9]
+        cov_db = blast_lines[6]
+        sequence = blast_lines[1]
+        product = blast_lines[13]
+
+        blast_out = (f"{sequence}: {gene} {product} ID: {id} COV_Q: {cov_q} "
+                     f"COV_DB: {cov_db}| ")
+        blast_out_results.append(blast_out)
+
+    return blast_out_results
+
+
+def process_plasmidfinder(abricate_result: List[str]) -> List[str]:
+    blast_out_results = []
+
+    for line in abricate_result:
+        blast_lines = line.split("\t")
+
+        id = blast_lines[10]
+        gene = blast_lines[5]
+        cov_q = blast_lines[9]
+        cov_db = blast_lines[6]
+
+        blast_out = (f"{gene} (ID: {id} COV_Q: {cov_q} COV_DB: {cov_db})")
+        blast_out_results.append(blast_out)
+
+    return blast_out_results

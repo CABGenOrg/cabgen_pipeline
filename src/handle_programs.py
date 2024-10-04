@@ -18,20 +18,21 @@ def run_command_line(command_line: str) -> str:
         result = run(
             command_line,
             shell=True,
-            check=True,           
-            text=True,            
-            capture_output=True   
+            check=True,
+            text=True,
+            capture_output=True
         )
 
         if result.returncode != 0:
             raise RuntimeError(
                 f"Command '{command_line}' failed with error: {result.stderr}")
-        
+
         return result.stdout
 
     except CalledProcessError as error:
         raise RuntimeError(
-            f"Command '{error.cmd}' failed with return code {error.returncode}. "
+            f"Command '{error.cmd}' failed with return code {
+                error.returncode}. "
             f"Output: {error.output}. Error: {error.stderr}"
         )
 
