@@ -1,7 +1,7 @@
 import re
 from os import getenv, path, makedirs, listdir
 from src.utils.handle_errors import fatal_error
-from src.handle_database import MongoSaver
+from src.models.MongoSaver import MongoSaver
 from src.types.SpeciesDict import SpeciesDict
 from src.handle_programs import run_command_line
 from src.utils.handle_folders import delete_folders_and_files
