@@ -7,9 +7,9 @@ import shutil
 import pathlib
 from os import path, makedirs
 from argparse import Namespace
-from src.handle_database import MongoSaver
-from src.handle_programs import run_command_line
-from src.handle_processing import run_blast_and_check_mutations, \
+from src.models.MongoSaver import MongoSaver
+from src.utils.handle_programs import run_command_line
+from src.utils.handle_processing import run_blast_and_check_mutations, \
     BacteriaDict, get_abricate_result, count_kraken_words
 
 

@@ -3,11 +3,11 @@ from os import getenv, path, makedirs, listdir
 from src.utils.handle_errors import fatal_error
 from src.models.MongoSaver import MongoSaver
 from src.types.SpeciesDict import SpeciesDict
-from src.handle_programs import run_command_line
+from src.utils.handle_programs import run_command_line
 from src.utils.handle_folders import delete_folders_and_files
-from src.handle_processing import count_kraken_words, build_species_data, \
-    identify_bacteria_species, get_abricate_result, process_resfinder, \
-    process_vfdb, process_plasmidfinder
+from src.utils.handle_processing import count_kraken_words, \
+    build_species_data, identify_bacteria_species, get_abricate_result, \
+    process_resfinder, process_vfdb, process_plasmidfinder
 
 uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
 

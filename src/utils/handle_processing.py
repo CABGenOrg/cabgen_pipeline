@@ -1,10 +1,10 @@
 import re
 from collections import Counter
 from typing import List, Tuple, Union
-from src.handle_programs import run_blastx
+from src.utils.handle_programs import run_blastx
 from src.types.SpeciesDict import SpeciesDict
 from src.types.BacteriaDict import BacteriaDict
-from src.handle_mutations import find_acineto_mutations, \
+from src.utils.handle_mutations import find_acineto_mutations, \
     find_ecloacae_mutations, find_kleb_mutations, find_pseudo_mutations
 
 choose_analysis = {"pseudomonasaeruginosa": find_pseudo_mutations,
