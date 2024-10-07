@@ -9,12 +9,14 @@ from src.handle_processing import count_kraken_words, build_species_data, \
     identify_bacteria_species, get_abricate_result, process_resfinder, \
     process_vfdb, process_plasmidfinder
 
+uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
+
 
 class CabgenPipeline:
     def __init__(self, sample: int, read1: str, read2: str, output: str):
         self.sample = int(sample)
-        self.read1 = read1
-        self.read2 = read2
+        self.read1 = path.join(uploaded_sequences_path, read1)
+        self.read2 = path.join(uploaded_sequences_path, read2)
         self.output = output
         self.threads = 16 if not getenv("THREADS") \
             else int(getenv("THREADS"))  # type: ignore
@@ -53,6 +55,7 @@ class CabgenPipeline:
             raise Exception(f"Can't create sample directories.\n\n{e}")
 
     def _load_programs(self):
+        self.fastqc = getenv("FASTQC") or ""
         self.abricate = getenv("ABRICATE_PATH") or ""
         self.mlst = getenv("MLST_PATH") or ""
         self.polimyxin_db = getenv("POLIMYXIN_DB_PATH") or ""
@@ -78,6 +81,20 @@ class CabgenPipeline:
                         f"The {program} is not defined. Check the env file.")
         except ValueError as e:
             fatal_error(f"Failed to check programs.\n\n{e}")
+
+    def _run_fastqc(self):
+        try:
+            print("Running FastQC")
+            fastqc_output_path = getenv("FASTQC_OUTPUT_PATH") or ""
+
+            if not fastqc_output_path:
+                raise ValueError("FastQC output path is not defined in .env.")
+
+            fastqc_line = (f"{self.fastqc} --quiet {self.read1} {self.read2} "
+                           f"--outdir {fastqc_output_path}")
+            run_command_line(fastqc_line)
+        except Exception as e:
+            fatal_error(f"Failed to run FASTQC.\n\n{e}")
 
     def _run_unicycler(self):
         try:
@@ -440,6 +457,7 @@ class CabgenPipeline:
             self._check_programs()
 
             # Starting pipeline run
+            self._run_fastqc()
             self._run_unicycler()
             self._run_prokka()
             self._run_checkm()
