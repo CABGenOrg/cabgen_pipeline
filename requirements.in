@@ -8,6 +8,7 @@ mypy
 checkm-genome
 biopython
 pymongo
+schedule
 # Test
 pytest
 pytest-mock
