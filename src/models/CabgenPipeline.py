@@ -1,7 +1,7 @@
 import re
 from os import getenv, path, makedirs, listdir
 from src.utils.handle_errors import fatal_error
-from src.models.MongoSaver import MongoSaver
+from models.MongoHandler import MongoHandler
 from src.types.SpeciesDict import SpeciesDict
 from src.utils.handle_programs import run_command_line
 from src.utils.handle_folders import delete_folders_and_files
@@ -20,8 +20,7 @@ class CabgenPipeline:
         self.output = output
         self.threads = 16 if not getenv("THREADS") \
             else int(getenv("THREADS"))  # type: ignore
-        self.mongo_client = MongoSaver(self.sample)
-        self.mongo_client.connect()
+        self.mongo_client = MongoHandler()
 
     def _check_params(self):
         try:
@@ -158,12 +157,19 @@ class CabgenPipeline:
                     row = row.rstrip("\n")
                     lines = row.split("\t")
                     self.genome_size = lines[8] or 1
-                    self.mongo_client.save("checkm_1", lines[5])
-                    self.mongo_client.save("checkm_2", lines[6])
-                    self.mongo_client.save("checkm_3", lines[8])
-                    self.mongo_client.save("checkm_4", lines[11])
+
+                    query = {"sequenciaId": self.sample}
+                    self.mongo_client.save(
+                        "relatorios", query, {"checkm_1": lines[5]})
+                    self.mongo_client.save(
+                        "relatorios", query, {"checkm_2": lines[6]})
+                    self.mongo_client.save(
+                        "relatorios", query, {"checkm_3": lines[8]})
+                    self.mongo_client.save(
+                        "relatorios", query, {"checkm_4": lines[11]})
                     self.contamination = lines[6] or 0
-                    self.mongo_client.save("sample", str(self.sample))
+                    self.mongo_client.save(
+                        "relatorios", query, {"sample": str(self.sample)})
         except Exception as e:
             fatal_error(f"Failed to process checkM result.\n\n{e}")
 
@@ -277,8 +283,10 @@ class CabgenPipeline:
 
     def _save_species_result(self):
         try:
+            query = {"sequenciaId": self.sample}
             if float(self.contamination) <= 10.:
-                self.mongo_client.save("especie", self.display_name)
+                self.mongo_client.save(
+                    "relatorios", query, {"especie": self.display_name})
             else:
                 first_repetition = self.most_common
                 first_count = self.first_count
@@ -287,7 +295,8 @@ class CabgenPipeline:
 
                 species_info = (f"{first_repetition} {first_count} "
                                 f"{second_repetition} {second_count}")
-                self.mongo_client.save("especie", species_info)
+                self.mongo_client.save(
+                    "relatorios", query, {"especie": species_info})
         except Exception as e:
             print(f"Failed to save species result.\n\n{e}")
 
@@ -324,12 +333,16 @@ class CabgenPipeline:
             gene_results, blast_out_results = process_resfinder(
                 abricate_result)
 
+            query = {"sequenciaId": self.sample}
             if not gene_results:
-                self.mongo_client.save("gene", "Not found")
-            else:
-                self.mongo_client.save("gene", "<br>".join(gene_results))
                 self.mongo_client.save(
-                    "resfinder", "<br>".join(blast_out_results))
+                    "relatorios", query, {"gene": "Not found"})
+            else:
+                self.mongo_client.save("relatorios", query,
+                                       {"gene": "<br>".join(gene_results)})
+                self.mongo_client.save("relatorios", query,
+                                       {"resfinder":
+                                        "<br>".join(blast_out_results)})
         except Exception as e:
             print(f"Failed to process Abricate resfinder result.\n\n{e}")
 
@@ -338,11 +351,15 @@ class CabgenPipeline:
             abricate_result = get_abricate_result(
                 self.abricate_vfdb_out)
 
+            query = {"sequenciaId": self.sample}
             if abricate_result:
                 blast_out_results = process_vfdb(abricate_result)
-                self.mongo_client.save("VFDB", "<br>".join(blast_out_results))
+                self.mongo_client.save(
+                    "relatorios", query,
+                    {"VFDB": "<br>".join(blast_out_results)})
             else:
-                self.mongo_client.save("VFDB", "Not Found")
+                self.mongo_client.save(
+                    "relatorios", query, {"VFDB": "Not Found"})
         except Exception as e:
             print(f"Failed to process Abricate VFDB result.\n\n{e}")
 
@@ -351,12 +368,14 @@ class CabgenPipeline:
             abricate_result = get_abricate_result(
                 self.abricate_plasmid_out)
 
+            query = {"sequenciaId": self.sample}
             if abricate_result:
                 blast_out_results = process_plasmidfinder(abricate_result)
-                self.mongo_client.save(
-                    "plasmid", "<br>".join(blast_out_results))
+                self.mongo_client.save("relatorios", query, {"plasmid":
+                                       "<br>".join(blast_out_results)})
             else:
-                self.mongo_client.save("plasmid", "Not Found")
+                self.mongo_client.save(
+                    "relatorios", query, {"plasmid": "Not Found"})
         except Exception as e:
             print(f"Failed to process Abricate PlasmidFinder result.\n\n{e}")
 
@@ -394,29 +413,35 @@ class CabgenPipeline:
                 scheme_mlst = out_mlst[1]
                 st = out_mlst[2]
 
+                query = {"sequenciaId": self.sample}
                 if st != "-":
                     result = st
-                    self.mongo_client.save('mlst', result)
+                    self.mongo_client.save(
+                        "relatorios", query, {"mlst": result})
                     print(f"Scheme used {scheme_mlst}")
                 elif st == "-":
                     result = "New ST"
-                    self.mongo_client.save('mlst', result)
+                    self.mongo_client.save(
+                        "relatorios", query, {"mlst": result})
                     print(f"Scheme used {scheme_mlst}")
                 elif scheme_mlst == "-":
                     result = "Not available for this specie"
-                    self.mongo_client.save('mlst', result)
+                    self.mongo_client.save(
+                        "relatorios", query, {"mlst": result})
                     print(f"Scheme used {scheme_mlst}")
 
-            self.mongo_client.save('mutacoes_poli', "<br>".join(
-                self.poli_mutations_result))
-            self.mongo_client.save('mutacoes_outras', "<br>".join(
-                self.others_mutations_result))
+            self.mongo_client.save("relatorios", query,
+                                   {"mutacoes_poli": "<br>".join(
+                                       self.poli_mutations_result)})
+            self.mongo_client.save("relatorios", query,
+                                   {"mutacoes_outras": "<br>".join(
+                                       self.others_mutations_result)})
         except Exception as e:
             print(f"Failed to process MLST result.\n\n{e}")
 
     def _run_coverage(self):
         try:
-            print('Run coverage')
+            print("Run coverage")
             catcmd = "cat"
             res = run_command_line(f"file {self.read1}")
             if res and (str(res).find("gzip compressed") > -1 or
@@ -443,20 +468,40 @@ class CabgenPipeline:
                             reads_sum) / float(self.genome_size)
 
             coverage = round(pre_coverage, 2)
-
-            self.mongo_client.save('coverage', str(coverage))
+            query = {"sequenciaId": self.sample}
+            self.mongo_client.save(
+                "relatorios", query, {"coverage": str(coverage)})
         except Exception as e:
             fatal_error(f"Failed to run coverage.\n\n{e}")
 
-    def run(self):
+    def _run_only_fastqc(self):
         try:
-            # Starting the pipeline dependencies
-            self._check_params()
-            self._create_dirs()
-            self._load_programs()
-            self._check_programs()
+            self._run_fastqc()
+        except Exception as e:
+            fatal_error(f"Failed to run CABGen only FastQC pipeline.\n\n{e}")
 
-            # Starting pipeline run
+    def _run_only_genomic(self):
+        try:
+            self._run_unicycler()
+            self._run_prokka()
+            self._run_checkm()
+            self._process_checkm_result()
+            self._run_kraken2()
+            self._process_kraken2_result()
+            self._process_species()
+            self._save_species_result()
+            abricate_dbs = ["resfinder", "vfdb", "plasmidfinder"]
+            for db in abricate_dbs:
+                self._run_abricate(db)
+                self._process_abricate_result(db)
+            self._run_mlst()
+            self._process_mlst()
+            self._run_coverage()
+        except Exception as e:
+            fatal_error(f"Failed to run CABGen only genomic pipeline.\n\n{e}")
+
+    def _run_complete(self):
+        try:
             self._run_fastqc()
             self._run_unicycler()
             self._run_prokka()
@@ -473,5 +518,25 @@ class CabgenPipeline:
             self._run_mlst()
             self._process_mlst()
             self._run_coverage()
+        except Exception as e:
+            fatal_error(f"Failed to run CABGen complete pipeline.\n\n{e}")
+
+    def run(self, only_fastqc=False, only_genomic=False, complete=False):
+        try:
+            # Starting the pipeline dependencies
+            self._check_params()
+            self._create_dirs()
+            self._load_programs()
+            self._check_programs()
+
+            # Starting pipeline run
+            if only_fastqc:
+                self._run_only_fastqc()
+            elif only_genomic:
+                self._run_only_genomic()
+            elif complete:
+                self._run_complete()
+            else:
+                raise ValueError("Invalid pipeline choice!")
         except Exception as e:
             fatal_error(f"Failed to run CABGen pipeline.\n\n{e}")
