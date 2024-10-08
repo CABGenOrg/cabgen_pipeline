@@ -348,3 +348,10 @@ def process_plasmidfinder(abricate_result: List[str]) -> List[str]:
         blast_out_results.append(blast_out)
 
     return blast_out_results
+
+
+def format_time(seconds: float) -> str:
+    hours, rem = divmod(seconds, 3600)
+    minutes, seconds = divmod(rem, 60)
+
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02} (hh:mm:ss)"

@@ -1,4 +1,5 @@
 import re
+from time import time
 from os import getenv, path, makedirs, listdir
 from src.utils.handle_errors import fatal_error
 from models.MongoHandler import MongoHandler
@@ -7,7 +8,7 @@ from src.utils.handle_programs import run_command_line
 from src.utils.handle_folders import delete_folders_and_files
 from src.utils.handle_processing import count_kraken_words, \
     build_species_data, identify_bacteria_species, get_abricate_result, \
-    process_resfinder, process_vfdb, process_plasmidfinder
+    process_resfinder, process_vfdb, process_plasmidfinder, format_time
 
 uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
 
@@ -37,7 +38,7 @@ class CabgenPipeline:
 
     def _create_dirs(self):
         try:
-            sample_directory = path.join(self.output, str(self.sample))
+            sample_directory = self.output
             unicycler_directory = path.join(sample_directory, "/unicycler")
             checkm_directory = path.join(sample_directory, "/checkM_bins")
 
@@ -477,6 +478,10 @@ class CabgenPipeline:
     def _run_only_fastqc(self):
         try:
             self._run_fastqc()
+            query = {"_id": self.sample}
+            bson = {"$currentDate": {"ultimaActualizacao": True},
+                    "$set": {"estado": "QUAL", "ultimaTarefa": ""}}
+            self.mongo_client.save("sequencias", query, bson)
         except Exception as e:
             fatal_error(f"Failed to run CABGen only FastQC pipeline.\n\n{e}")
 
@@ -497,6 +502,12 @@ class CabgenPipeline:
             self._run_mlst()
             self._process_mlst()
             self._run_coverage()
+
+            query = {"_id": self.sample}
+            bson = {"$currentDate": {"ultimaActualizacao": True},
+                    "$set": {"estado": "ENSA", "ultimaTarefa": "",
+                             "arquivofasta": f"{self.sample}.fasta"}}
+            self.mongo_client.save("sequencias", query, bson)
         except Exception as e:
             fatal_error(f"Failed to run CABGen only genomic pipeline.\n\n{e}")
 
@@ -518,11 +529,18 @@ class CabgenPipeline:
             self._run_mlst()
             self._process_mlst()
             self._run_coverage()
+
+            query = {"_id": self.sample}
+            bson = {"$currentDate": {"ultimaActualizacao": True},
+                    "$set": {"estado": "ENSA", "ultimaTarefa": "",
+                             "arquivofasta": f"{self.sample}.fasta"}}
+            self.mongo_client.save("sequencias", query, bson)
         except Exception as e:
             fatal_error(f"Failed to run CABGen complete pipeline.\n\n{e}")
 
     def run(self, only_fastqc=False, only_genomic=False, complete=False):
         try:
+            start_time = time()
             # Starting the pipeline dependencies
             self._check_params()
             self._create_dirs()
@@ -538,5 +556,9 @@ class CabgenPipeline:
                 self._run_complete()
             else:
                 raise ValueError("Invalid pipeline choice!")
+            self.mongo_client.close()
+            runtime = format_time(time() - start_time)
+            print(f"Total runtime: {runtime}")
         except Exception as e:
             fatal_error(f"Failed to run CABGen pipeline.\n\n{e}")
+            self.mongo_client.close()
