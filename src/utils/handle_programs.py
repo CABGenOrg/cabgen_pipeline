@@ -31,9 +31,9 @@ def run_command_line(command_line: str) -> str:
 
     except CalledProcessError as error:
         raise RuntimeError(
-            f"Command '{error.cmd}' failed with return code {
-                error.returncode}. "
-            f"Output: {error.output}. Error: {error.stderr}"
+            f"Command '{error.cmd}' failed with return code "
+            f"{error.returncode}. Output: {error.output}. "
+            f"Error: {error.stderr}."
         )
 
     except Exception as error:

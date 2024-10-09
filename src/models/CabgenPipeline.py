@@ -2,7 +2,7 @@ import re
 from time import time
 from os import getenv, path, makedirs, listdir
 from src.utils.handle_errors import fatal_error
-from models.MongoHandler import MongoHandler
+from src.models.MongoHandler import MongoHandler
 from src.types.SpeciesDict import SpeciesDict
 from src.utils.handle_programs import run_command_line
 from src.utils.handle_folders import delete_folders_and_files
@@ -514,27 +514,7 @@ class CabgenPipeline:
     def _run_complete(self):
         try:
             self._run_fastqc()
-            self._run_unicycler()
-            self._run_prokka()
-            self._run_checkm()
-            self._process_checkm_result()
-            self._run_kraken2()
-            self._process_kraken2_result()
-            self._process_species()
-            self._save_species_result()
-            abricate_dbs = ["resfinder", "vfdb", "plasmidfinder"]
-            for db in abricate_dbs:
-                self._run_abricate(db)
-                self._process_abricate_result(db)
-            self._run_mlst()
-            self._process_mlst()
-            self._run_coverage()
-
-            query = {"_id": self.sample}
-            bson = {"$currentDate": {"ultimaActualizacao": True},
-                    "$set": {"estado": "ENSA", "ultimaTarefa": "",
-                             "arquivofasta": f"{self.sample}.fasta"}}
-            self.mongo_client.save("sequencias", query, bson)
+            self._run_only_genomic()
         except Exception as e:
             fatal_error(f"Failed to run CABGen complete pipeline.\n\n{e}")
 
