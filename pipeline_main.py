@@ -2,6 +2,7 @@ import schedule
 from time import sleep
 from typing import List
 from os import getenv, path
+from dotenv import load_dotenv
 from src.utils.handle_errors import fatal_error
 from concurrent.futures import ProcessPoolExecutor, wait
 from src.models.CabgenPipeline import CabgenPipeline

@@ -1,5 +1,6 @@
 import re
 from time import time
+from dotenv import load_dotenv
 from os import getenv, path, makedirs, listdir
 from src.utils.handle_errors import fatal_error
 from src.models.MongoHandler import MongoHandler
