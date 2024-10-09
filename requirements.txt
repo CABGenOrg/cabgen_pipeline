@@ -80,6 +80,8 @@ pytest-mock==3.14.0
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via matplotlib
+python-dotenv==1.0.1
+    # via -r requirements.in
 schedule==1.2.2
     # via -r requirements.in
 scipy==1.14.0

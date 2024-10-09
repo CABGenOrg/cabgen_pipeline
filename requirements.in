@@ -9,6 +9,7 @@ checkm-genome
 biopython
 pymongo
 schedule
+python-dotenv
 # Test
 pytest
 pytest-mock
