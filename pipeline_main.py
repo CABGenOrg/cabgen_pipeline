@@ -9,6 +9,8 @@ from src.models.CabgenPipeline import CabgenPipeline
 from src.utils.handle_tasks import get_fastqc_tasks, get_complete_tasks, \
     get_genomic_tasks
 
+load_dotenv()
+
 
 def process_task(task: dict, mode: str):
     try:

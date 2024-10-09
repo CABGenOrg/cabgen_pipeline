@@ -11,6 +11,7 @@ from src.utils.handle_processing import count_kraken_words, \
     build_species_data, identify_bacteria_species, get_abricate_result, \
     process_resfinder, process_vfdb, process_plasmidfinder, format_time
 
+load_dotenv()
 uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
 
 
