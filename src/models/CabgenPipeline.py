@@ -46,8 +46,8 @@ class CabgenPipeline:
     def _create_dirs(self):
         try:
             sample_directory = self.output
-            unicycler_directory = path.join(sample_directory, "/unicycler")
-            checkm_directory = path.join(sample_directory, "/checkM_bins")
+            unicycler_directory = path.join(sample_directory, "unicycler")
+            checkm_directory = path.join(sample_directory, "checkM_bins")
 
             self.sample_directory = sample_directory
             self.unicycler_directory = unicycler_directory
