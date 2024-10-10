@@ -1,8 +1,9 @@
 import re
+import sys
 from time import time
 from dotenv import load_dotenv
+from logging import Logger
 from os import getenv, path, makedirs, listdir
-from src.utils.handle_errors import fatal_error
 from src.models.MongoHandler import MongoHandler
 from src.types.SpeciesDict import SpeciesDict
 from src.utils.handle_programs import run_command_line
@@ -16,27 +17,31 @@ uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
 
 
 class CabgenPipeline:
-    def __init__(self, sample: int, read1: str, read2: str, output: str):
+    def __init__(self, sample: int, read1: str, read2: str, output: str,
+                 logger: Logger):
         self.sample = int(sample)
         self.read1 = path.join(uploaded_sequences_path, read1)
         self.read2 = path.join(uploaded_sequences_path, read2)
         self.output = output
-        self.threads = 16 if not getenv("THREADS") \
+        self.threads = 3 if not getenv("THREADS") \
             else int(getenv("THREADS"))  # type: ignore
         self.mongo_client = MongoHandler()
+        self.logger = logger
 
     def _check_params(self):
         try:
-            print("Parameters:")
+            self.logger.info("Parameters:")
             params = ["sample", "read1", "read2", "output"]
             for param in params:
                 param_value = getattr(self, param, None)
                 if param_value:
-                    print(f"{param}: {param_value}")
+                    self.logger.info(f"{param}: {param_value}")
                 else:
-                    raise ValueError(f"The param {param} is empty.")
+                    self.logger.error(f"The param {param} is empty.")
+                    raise ValueError
         except ValueError as e:
-            fatal_error(f"Failed to check parameters.\n\n{e}")
+            self.logger.error(f"Failed to check parameters.\n\n{e}")
+            sys.exit(1)
 
     def _create_dirs(self):
         try:
@@ -54,7 +59,8 @@ class CabgenPipeline:
             for dir in dirs_to_create:
                 makedirs(dir, exist_ok=True)
         except Exception as e:
-            raise Exception(f"Can't create sample directories.\n\n{e}")
+            self.logger.error(f"Can't create sample directories.\n\n{e}")
+            sys.exit(1)
 
     def _load_programs(self):
         self.fastqc = getenv("FASTQC") or ""
@@ -77,30 +83,34 @@ class CabgenPipeline:
             for program in self.loaded_programs:
                 program_value = getattr(self, program, None)
                 if program_value:
-                    print(f"{program}: {program_value}")
+                    self.logger.info(f"{program}: {program_value}")
                 else:
-                    raise ValueError(
+                    self.logger.error(
                         f"The {program} is not defined. Check the env file.")
+                    raise ValueError
         except ValueError as e:
-            fatal_error(f"Failed to check programs.\n\n{e}")
+            self.logger.error(f"Failed to check programs.\n\n{e}")
+            sys.exit(1)
 
     def _run_fastqc(self):
         try:
-            print("Running FastQC")
+            self.logger.info("Running FastQC")
             fastqc_output_path = getenv("FASTQC_OUTPUT_PATH") or ""
 
             if not fastqc_output_path:
-                raise ValueError("FastQC output path is not defined in .env.")
+                self.logger.error("FastQC output path is not defined in .env.")
+                raise ValueError
 
             fastqc_line = (f"{self.fastqc} --quiet {self.read1} {self.read2} "
                            f"--outdir {fastqc_output_path}")
             run_command_line(fastqc_line)
         except Exception as e:
-            fatal_error(f"Failed to run FASTQC.\n\n{e}")
+            self.logger.error(f"Failed to run FASTQC.\n\n{e}")
+            sys.exit(1)
 
     def _run_unicycler(self):
         try:
-            print("Running Unicycler")
+            self.logger.info("Running Unicycler")
             unicycler_line = (f"{self.unicycler} -1 {self.read1} "
                               f"-2 {self.read2} "
                               f"-o {self.unicycler_directory} "
@@ -108,26 +118,28 @@ class CabgenPipeline:
                               f"-t {self.threads}")
             program_output = run_command_line(unicycler_line)
             if program_output:
-                print(program_output)
+                self.logger.info(program_output)
         except Exception as e:
-            fatal_error(f"Failed to run Unicycler.\n\n{e}")
+            self.logger.error(f"Failed to run Unicycler.\n\n{e}")
+            sys.exit(1)
 
     def _run_prokka(self):
         try:
             self.assembly_path = path.join(f"{self.output}/{self.sample}",
                                            "/unicycler/assembly.fasta")
-            print("Run Prokka")
+            self.logger.info("Run Prokka")
             prokka_line = (f"prokka --outdir {self.output}/"
                            f"{self.sample}/prokka --prefix genome "
                            f"{self.assembly_path} --force "
                            f"--cpus {self.threads}")
             run_command_line(prokka_line)
         except Exception as e:
-            fatal_error(f"Failed to run Prokka.\n\n{e}")
+            self.logger.error(f"Failed to run Prokka.\n\n{e}")
+            sys.exit(1)
 
     def _run_checkm(self):
         try:
-            print("Run CheckM")
+            self.logger.info("Run CheckM")
             checkM_line = ("checkm lineage_wf -x fasta "
                            f"{self.unicycler_directory} "
                            f"{self.checkm_directory} --threads {self.threads} "
@@ -147,11 +159,12 @@ class CabgenPipeline:
                                if "resultados" not in file]
             delete_folders_and_files(files_to_delete)
         except Exception as e:
-            fatal_error(f"Failed to run checkM.\n\n{e}")
+            self.logger.error(f"Failed to run checkM.\n\n{e}")
+            sys.exit(1)
 
     def _process_checkm_result(self):
         try:
-            print("Saving CheckM result to MongoDB")
+            self.logger.info("Saving CheckM result to MongoDB")
             checkM_results_file = (f"{self.checkm_directory}/"
                                    f"{self.sample}_resultados")
             with open(checkM_results_file) as inp:
@@ -174,22 +187,25 @@ class CabgenPipeline:
                     self.mongo_client.save(
                         "relatorios", query, {"sample": str(self.sample)})
         except Exception as e:
-            fatal_error(f"Failed to process checkM result.\n\n{e}")
+            self.logger.error(f"Failed to process checkM result.\n\n{e}")
+            sys.exit(1)
 
     def _run_kraken2(self):
         try:
-            print("Run Kraken2")
+            self.logger.info("Run Kraken2")
             kraken_line = (f"{self.kraken2} --db {self.kraken_db} "
                            f"--use-names --paired {self.read1} {self.read2} "
                            f"--output {self.sample_directory}/out_kraken "
                            f"--threads {self.threads}")
             run_command_line(kraken_line)
         except Exception as e:
-            fatal_error(f"Failed to run kraken2.\n\n{e}")
+            self.logger.error(f"Failed to run kraken2.\n\n{e}")
+            sys.exit(1)
 
     def _process_kraken2_result(self):
         try:
-            print(f"Splitting output into {self.threads} equal files.")
+            self.logger.info(f"Splitting output into {self.threads} equal "
+                             "files.")
             preffix = "krk"
             splitter_line = (f"split --numeric-suffixes=1 -n l/{self.threads} "
                              f"{self.sample_directory}/out_kraken {preffix}")
@@ -204,7 +220,8 @@ class CabgenPipeline:
             self.first_count = first_count
             self.second_count = second_count
         except Exception as e:
-            fatal_error(f"Failed to process kraken2 result.\n\n{e}")
+            self.logger.error(f"Failed to process kraken2 result.\n\n{e}")
+            sys.exit(1)
 
     def _process_species(self):
         try:
@@ -218,7 +235,8 @@ class CabgenPipeline:
                 species = ""
 
             species_final_result = f"{genus}{species}".lower()
-            print(f"Final result of the species: {species_final_result}.")
+            self.logger.info(f"Final result of the species: "
+                             f"{species_final_result}.")
             species_info: SpeciesDict = {"species": species_final_result,
                                          "assembly": self.assembly_path,
                                          "sample": self.sample,
@@ -250,7 +268,8 @@ class CabgenPipeline:
             self.display_name = display_name
             self.mlst_species = mlst_species
         except Exception as e:
-            fatal_error(f"Failed to process species.\n\n{e}")
+            self.logger.error(f"Failed to process species.\n\n{e}")
+            sys.exit(1)
 
     def _run_fastani(self, species_info: SpeciesDict):
         try:
@@ -282,7 +301,8 @@ class CabgenPipeline:
 
             return species_name, mlst_species
         except Exception as e:
-            fatal_error(f"Failed to run FastAni.\n\n{e}")
+            self.logger.error(f"Failed to run FastAni.\n\n{e}")
+            sys.exit(1)
 
     def _save_species_result(self):
         try:
@@ -301,33 +321,34 @@ class CabgenPipeline:
                 self.mongo_client.save(
                     "relatorios", query, {"especie": species_info})
         except Exception as e:
-            print(f"Failed to save species result.\n\n{e}")
+            self.logger.error(f"Failed to save species result.\n\n{e}")
 
     def _run_abricate(self, db: str):
         try:
             if db.lower() == "resfinder":
-                print("Run Abricate - ResFinder ")
+                self.logger.info("Run Abricate - ResFinder ")
                 self.abricate_res_out = path.join(
                     self.sample_directory, f"{self.sample}_outAbricateRes")
             elif db.lower() == "vfdb":
-                print("Run Abricate - VFDB ")
+                self.logger.info("Run Abricate - VFDB ")
                 self.abricate_vfdb_out = path.join(
                     self.sample_directory, f"{self.sample}_outAbricateVFDB")
             elif db.lower() == "plasmidfinder":
-                print("Run Abricate - PlasmidFinder ")
+                self.logger.info("Run Abricate - PlasmidFinder ")
                 self.abricate_plasmid_out = path.join(
                     self.sample_directory, f"{self.sample}_outAbricatePlasmid")
             else:
-                raise ValueError("Abricate database invalid.")
+                self.logger.error("Abricate database invalid.")
 
             abricate_line = (f"{self.abricate} --db {db} "
                              f"{self.sample_directory}/prokka/genome.ffn "
                              f"> {self.abricate_res_out} "
                              f"--threads {self.threads}")
-            print(f"{abricate_line}")
+            self.logger.info(f"{abricate_line}")
             run_command_line(abricate_line)
         except Exception as e:
-            print(f"Failed to run Abricate with resfinder DB.\n\n{e}")
+            self.logger.error(
+                f"Failed to run Abricate with resfinder DB.\n\n{e}")
 
     def _process_resfinder_result(self):
         try:
@@ -347,7 +368,8 @@ class CabgenPipeline:
                                        {"resfinder":
                                         "<br>".join(blast_out_results)})
         except Exception as e:
-            print(f"Failed to process Abricate resfinder result.\n\n{e}")
+            self.logger.error(
+                f"Failed to process Abricate resfinder result.\n\n{e}")
 
     def _process_vfdb_result(self):
         try:
@@ -364,7 +386,8 @@ class CabgenPipeline:
                 self.mongo_client.save(
                     "relatorios", query, {"VFDB": "Not Found"})
         except Exception as e:
-            print(f"Failed to process Abricate VFDB result.\n\n{e}")
+            self.logger.error(
+                f"Failed to process Abricate VFDB result.\n\n{e}")
 
     def _process_plasmid_result(self):
         try:
@@ -380,7 +403,8 @@ class CabgenPipeline:
                 self.mongo_client.save(
                     "relatorios", query, {"plasmid": "Not Found"})
         except Exception as e:
-            print(f"Failed to process Abricate PlasmidFinder result.\n\n{e}")
+            self.logger.error(
+                f"Failed to process Abricate PlasmidFinder result.\n\n{e}")
 
     def _process_abricate_result(self, db: str):
         try:
@@ -391,13 +415,14 @@ class CabgenPipeline:
             elif db.lower() == "plasmidfinder":
                 self._process_plasmid_result()
             else:
-                raise ValueError("Abricate database invalid.")
+                self.logger.error("Abricate database invalid.")
+                raise ValueError
         except Exception as e:
-            print(f"Failed to process Abricate result.\n\n{e}")
+            self.logger.error(f"Failed to process Abricate result.\n\n{e}")
 
     def _run_mlst(self):
         try:
-            print(f"Run MLST for {self.mlst_species}")
+            self.logger.info(f"Run MLST for {self.mlst_species}")
             self.mlst_result_path = path.join(self.sample_directory,
                                               "mlst.csv")
             mlst_line = (f"{self.mlst} --threads {self.threads} "
@@ -406,7 +431,7 @@ class CabgenPipeline:
 
             run_command_line(mlst_line)
         except Exception as e:
-            print(f"Failed to run MLST.\n\n{e}")
+            self.logger.error(f"Failed to run MLST.\n\n{e}")
 
     def _process_mlst(self):
         try:
@@ -421,17 +446,17 @@ class CabgenPipeline:
                     result = st
                     self.mongo_client.save(
                         "relatorios", query, {"mlst": result})
-                    print(f"Scheme used {scheme_mlst}")
+                    self.logger.info(f"Scheme used {scheme_mlst}")
                 elif st == "-":
                     result = "New ST"
                     self.mongo_client.save(
                         "relatorios", query, {"mlst": result})
-                    print(f"Scheme used {scheme_mlst}")
+                    self.logger.info(f"Scheme used {scheme_mlst}")
                 elif scheme_mlst == "-":
                     result = "Not available for this specie"
                     self.mongo_client.save(
                         "relatorios", query, {"mlst": result})
-                    print(f"Scheme used {scheme_mlst}")
+                    self.logger.info(f"Scheme used {scheme_mlst}")
 
             self.mongo_client.save("relatorios", query,
                                    {"mutacoes_poli": "<br>".join(
@@ -440,11 +465,11 @@ class CabgenPipeline:
                                    {"mutacoes_outras": "<br>".join(
                                        self.others_mutations_result)})
         except Exception as e:
-            print(f"Failed to process MLST result.\n\n{e}")
+            self.logger.error(f"Failed to process MLST result.\n\n{e}")
 
     def _run_coverage(self):
         try:
-            print("Run coverage")
+            self.logger.info("Run coverage")
             catcmd = "cat"
             res = run_command_line(f"file {self.read1}")
             if res and (str(res).find("gzip compressed") > -1 or
@@ -475,7 +500,8 @@ class CabgenPipeline:
             self.mongo_client.save(
                 "relatorios", query, {"coverage": str(coverage)})
         except Exception as e:
-            fatal_error(f"Failed to run coverage.\n\n{e}")
+            self.logger.error(f"Failed to run coverage.\n\n{e}")
+            sys.exit(1)
 
     def _run_only_fastqc(self):
         try:
@@ -485,7 +511,9 @@ class CabgenPipeline:
                     "$set": {"estado": "QUAL", "ultimaTarefa": ""}}
             self.mongo_client.save("sequencias", query, bson)
         except Exception as e:
-            fatal_error(f"Failed to run CABGen only FastQC pipeline.\n\n{e}")
+            self.logger.error(
+                f"Failed to run CABGen only FastQC pipeline.\n\n{e}")
+            sys.exit(1)
 
     def _run_only_genomic(self):
         try:
@@ -511,14 +539,18 @@ class CabgenPipeline:
                              "arquivofasta": f"{self.sample}.fasta"}}
             self.mongo_client.save("sequencias", query, bson)
         except Exception as e:
-            fatal_error(f"Failed to run CABGen only genomic pipeline.\n\n{e}")
+            self.logger.error(
+                f"Failed to run CABGen only genomic pipeline.\n\n{e}")
+            sys.exit(1)
 
     def _run_complete(self):
         try:
             self._run_fastqc()
             self._run_only_genomic()
         except Exception as e:
-            fatal_error(f"Failed to run CABGen complete pipeline.\n\n{e}")
+            self.logger.error(
+                f"Failed to run CABGen complete pipeline.\n\n{e}")
+            sys.exit(1)
 
     def run(self, only_fastqc=False, only_genomic=False, complete=False):
         try:
@@ -537,10 +569,13 @@ class CabgenPipeline:
             elif complete:
                 self._run_complete()
             else:
-                raise ValueError("Invalid pipeline choice!")
+                self.logger.error("Invalid pipeline choice!")
+                raise ValueError
+
             self.mongo_client.close()
             runtime = format_time(time() - start_time)
-            print(f"Total runtime: {runtime}")
+            self.logger.info(f"Total runtime: {runtime}")
         except Exception as e:
-            fatal_error(f"Failed to run CABGen pipeline.\n\n{e}")
             self.mongo_client.close()
+            self.logger.error(f"Failed to run CABGen pipeline.\n\n{e}")
+            sys.exit(1)

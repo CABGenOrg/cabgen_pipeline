@@ -3,6 +3,7 @@ from time import sleep
 from typing import List
 from os import getenv, path
 from dotenv import load_dotenv
+from src.utils.handle_log import logging_conf
 from src.utils.handle_errors import fatal_error
 from concurrent.futures import ProcessPoolExecutor, wait
 from src.models.CabgenPipeline import CabgenPipeline
@@ -18,11 +19,21 @@ def process_task(task: dict, mode: str):
         if not output_path:
             raise ValueError("There is no output path.")
 
+        log_path = getenv("LOG_PATH") or ""
+        if not log_path:
+            raise ValueError("There is no log path.")
+
         sample = int(task.get("_id", 0))
         read1 = task.get("arquivofastqr1", "")
         read2 = task.get("arquivofastqr2", "")
         output = path.join(output_path, f"output_{sample}")
-        pipe = CabgenPipeline(sample, read1, read2, output)
+
+        logger = logging_conf(sample, log_path)
+        if not logger:
+            print("Logger could not be started")
+
+        pipe = CabgenPipeline(sample, read1, read2,
+                              output, logger)  # type: ignore
 
         if mode == "fastqc":
             pipe.run(only_fastqc=True)

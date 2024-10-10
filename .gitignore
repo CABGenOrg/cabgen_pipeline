@@ -6,3 +6,4 @@ python_libs/
 mock_main.py
 *__pycache__/
 *.venv
+.env
