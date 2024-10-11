@@ -134,12 +134,11 @@ class CabgenPipeline:
 
     def _run_prokka(self):
         try:
-            self.assembly_path = path.join(f"{self.output}/{self.sample}",
-                                           "/unicycler/assembly.fasta")
+            self.assembly_path = path.join(f"{self.output}",
+                                           "unicycler/assembly.fasta")
             self.logger.info("Run Prokka")
-            prokka_line = (f"prokka --outdir {self.output}/"
-                           f"{self.sample}/prokka --prefix genome "
-                           f"{self.assembly_path} --force "
+            prokka_line = (f"prokka --outdir {self.output}/prokka"
+                           f" --prefix genome {self.assembly_path} --force "
                            f"--cpus {self.threads}")
             run_command_line(prokka_line)
         except Exception as e:
