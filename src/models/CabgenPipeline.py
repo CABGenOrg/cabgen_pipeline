@@ -73,6 +73,7 @@ class CabgenPipeline:
         self.unicycler = getenv("UNICYCLER_PATH") or ""
         self.fastani = getenv("FASTANI_PATH") or ""
         self.fastani_db = getenv("FASTANI_DB_PATH") or ""
+        self.spades = getenv("SPADES_PATH") or ""
         self.loaded_programs = ["abricate", "mlst",
                                 "polimyxin_db", "outhers_db",
                                 "kraken2", "kraken_db", "unicycler",
@@ -111,11 +112,19 @@ class CabgenPipeline:
     def _run_unicycler(self):
         try:
             self.logger.info("Running Unicycler")
-            unicycler_line = (f"{self.unicycler} -1 {self.read1} "
-                              f"-2 {self.read2} "
-                              f"-o {self.unicycler_directory} "
-                              "--min_fasta_length 500 --mode conservative "
-                              f"-t {self.threads}")
+            if self.spades:
+                unicycler_line = (f"{self.unicycler} -1 {self.read1} "
+                                  f"-2 {self.read2} "
+                                  f"-o {self.unicycler_directory} "
+                                  "--min_fasta_length 500 --mode conservative "
+                                  f"-t {self.threads} "
+                                  f"--spades_path {self.spades}")
+            else:
+                unicycler_line = (f"{self.unicycler} -1 {self.read1} "
+                                  f"-2 {self.read2} "
+                                  f"-o {self.unicycler_directory} "
+                                  "--min_fasta_length 500 --mode conservative "
+                                  f"-t {self.threads}")
             program_output = run_command_line(unicycler_line)
             if program_output:
                 self.logger.info(program_output)
