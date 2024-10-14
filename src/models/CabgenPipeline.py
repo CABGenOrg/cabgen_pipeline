@@ -508,9 +508,11 @@ class CabgenPipeline:
 
             reads_sum = (float(n_reads1) + float(n_reads2))
 
-            zcat3 = (f"{catcmd} {self.read1} | awk '{{if(NR%4==2) "
-                     "{{count++; bases += length}} }} END "
-                     "{{print bases/count}}'")
+            cat_line = f"{catcmd} {self.read1}"
+            awk_line = ("awk '{{if(NR%4==2) {{count++; bases += length}} }} "
+                        "END {{print bases/count}}'")
+            zcat3 = f"{cat_line} | {awk_line}"
+
             res_avg = run_command_line(zcat3)
             average_length = res_avg.rstrip("\n")
 
