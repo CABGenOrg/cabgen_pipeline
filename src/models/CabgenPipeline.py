@@ -342,21 +342,29 @@ class CabgenPipeline:
                 self.logger.info("Run Abricate - ResFinder ")
                 self.abricate_res_out = path.join(
                     self.sample_directory, f"{self.sample}_outAbricateRes")
+                abricate_line = (f"{self.abricate} --db {db} "
+                                 f"{self.sample_directory}/prokka/genome.ffn "
+                                 f"> {self.abricate_res_out} "
+                                 f"--threads {self.threads}")
             elif db.lower() == "vfdb":
                 self.logger.info("Run Abricate - VFDB ")
                 self.abricate_vfdb_out = path.join(
                     self.sample_directory, f"{self.sample}_outAbricateVFDB")
+                abricate_line = (f"{self.abricate} --db {db} "
+                                 f"{self.sample_directory}/prokka/genome.ffn "
+                                 f"> {self.abricate_vfdb_out} "
+                                 f"--threads {self.threads}")
             elif db.lower() == "plasmidfinder":
                 self.logger.info("Run Abricate - PlasmidFinder ")
                 self.abricate_plasmid_out = path.join(
                     self.sample_directory, f"{self.sample}_outAbricatePlasmid")
+                abricate_line = (f"{self.abricate} --db {db} "
+                                 f"{self.sample_directory}/prokka/genome.ffn "
+                                 f"> {self.abricate_plasmid_out} "
+                                 f"--threads {self.threads}")
             else:
                 self.logger.error("Abricate database invalid.")
 
-            abricate_line = (f"{self.abricate} --db {db} "
-                             f"{self.sample_directory}/prokka/genome.ffn "
-                             f"> {self.abricate_res_out} "
-                             f"--threads {self.threads}")
             self.logger.info(f"{abricate_line}")
             run_command_line(abricate_line)
         except Exception as e:
