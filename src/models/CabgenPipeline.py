@@ -3,6 +3,7 @@ import sys
 from time import time
 from dotenv import load_dotenv
 from logging import Logger
+from shutil import rmtree
 from os import getenv, path, makedirs, listdir
 from src.models.MongoHandler import MongoHandler
 from src.types.SpeciesDict import SpeciesDict
@@ -55,6 +56,9 @@ class CabgenPipeline:
 
             dirs_to_create = [sample_directory, unicycler_directory,
                               checkm_directory]
+
+            # Clean older analysis
+            rmtree(sample_directory, ignore_errors=True)
 
             for dir in dirs_to_create:
                 makedirs(dir, exist_ok=True)
