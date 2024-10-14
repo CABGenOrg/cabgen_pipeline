@@ -220,7 +220,8 @@ class CabgenPipeline:
                              "files.")
             preffix = "krk"
             splitter_line = (f"split --numeric-suffixes=1 -n l/{self.threads} "
-                             f"{self.sample_directory}/out_kraken {preffix}")
+                             f"{self.sample_directory}/out_kraken "
+                             f"{self.sample_directory}/{preffix}")
             run_command_line(splitter_line)
 
             most_common, second_most_common, \
