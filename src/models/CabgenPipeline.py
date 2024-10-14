@@ -151,7 +151,7 @@ class CabgenPipeline:
             checkM_line = ("checkm lineage_wf -x fasta "
                            f"{self.unicycler_directory} "
                            f"{self.checkm_directory} --threads {self.threads} "
-                           f"--pplacer_threads {self.threads}")
+                           f"--pplacer_threads 1")
             checkM_qa_line = ("checkm qa -o 2 "
                               f"-f {self.checkm_directory}/{self.sample}"
                               "_resultados "
