@@ -1,4 +1,5 @@
 import re
+from os import path
 from collections import Counter
 from typing import List, Tuple, Union
 from src.utils.handle_programs import run_blastx
@@ -259,6 +260,7 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
         print_species = desired_species_data.get("display_name")
         poli_fasta = desired_species_data.get("poli_fasta")
         others_fasta = desired_species_data.get("others_fasta")
+        output_path = species_info.get("output_path")
 
         if poli_fasta and others_fasta:
             bacteria_dict: BacteriaDict = {
@@ -267,8 +269,8 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
                 "sample": str(sample),
                 "others_db_path": others_fasta,
                 "poli_db_path": poli_fasta,
-                "others_outfile_suffix": "blastOthers",
-                "poli_outfile_suffix": "blastPoli"
+                "others_outfile_suffix": path.join(output_path, "blastOthers"),
+                "poli_outfile_suffix": path.join(output_path, "blastPoli")
             }
             return run_blast_and_check_mutations(bacteria_dict), \
                 print_species, mlst_species

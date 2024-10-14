@@ -8,3 +8,4 @@ class SpeciesDict(TypedDict):
     others_db_path: str
     poli_db_path: str
     fastani_db_path: str
+    output_path: str

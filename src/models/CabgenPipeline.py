@@ -255,7 +255,8 @@ class CabgenPipeline:
                                          "sample": self.sample,
                                          "poli_db_path": self.polimyxin_db,
                                          "others_db_path": self.outhers_db,
-                                         "fastani_db_path": self.fastani_db}
+                                         "fastani_db_path": self.fastani_db,
+                                         "output_path": self.sample_directory}
 
             blast_result, display_name, mlst_species = \
                 identify_bacteria_species(species_info)
