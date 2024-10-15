@@ -29,7 +29,10 @@ class MongoHandler:
     def save(self, collection_name: str, query: dict, bson: dict):
         try:
             collection = self.db[collection_name]
-            bson = {"$set": bson}
+
+            if "$set" not in bson:
+                bson = {"$set": bson}
+
             collection.update_one(query, bson, upsert=True)
         except Exception as error:
             raise Exception(f"Could not update document.\n\n{error}")
