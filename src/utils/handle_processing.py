@@ -169,7 +169,7 @@ def count_kraken_words(kraken_output: str) -> Tuple[str, str, int, int]:
     return first_most_common, second_most_common, first_count, second_count
 
 
-def build_species_data(species_info: SpeciesDict) -> Tuple[dict, dict]:
+def build_species_data(species_info: SpeciesDict) -> dict:
     others_db_path = species_info.get("others_db_path")
     poli_db_path = species_info.get("poli_db_path")
     fastani_path = species_info.get("fastani_db_path")
@@ -222,28 +222,28 @@ def build_species_data(species_info: SpeciesDict) -> Tuple[dict, dict]:
             "others_fasta": f"{others_db_path}/proteins_outrasMut_kleb.fasta",
             "run_blast": True,
             "fastani_list": f"{fastani_path}/kleb_database/lista-kleb"
-        }
-    }
-
-    fastani_species = {
-        "klebsiellapneumoniae": {
-            "mlst": "kpneumoniae",
-            "display_name": "Klebsiella pneumoniae",
-            "poli_fasta": f"{poli_db_path}/proteins_kleb_poli.fasta",
-            "others_fasta": f"{others_db_path}/proteins_outrasMut_kleb.fasta",
-            "fastani_list": f"{fastani_path}/kleb_database/lista-kleb"
         },
         "enterobacter_species": {
             "mlst": "ecloacae",
+            "display_name": "Enterobacter cloacae subsp cloacae",
+            "poli_fasta": f"{poli_db_path}/proteins_Ecloacae_poli.fasta",
+            "others_fasta": (f"{others_db_path}/"
+                             "proteins_outrasMut_Ecloacae.fasta"),
+            "run_blast": True,
             "fastani_list": f"{fastani_path}/fastANI/list_entero"
         },
         "acinetobacter_species": {
             "mlst": "abaumannii_2",
+            "display_name": "Acinetobacter baumannii",
+            "poli_fasta": f"{poli_db_path}/proteins_acineto_poli.fasta",
+            "others_fasta": (f"{others_db_path}/"
+                             "proteins_outrasMut_acineto.fasta"),
+            "run_blast": True,
             "fastani_list": f"{fastani_path}/fastANI_acineto/list-acineto"
         }
     }
 
-    return species_data, fastani_species
+    return species_data
 
 
 def handle_species(species_info: SpeciesDict, species_data: dict) -> \
@@ -262,6 +262,9 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
         others_fasta = desired_species_data.get("others_fasta")
         output_path = species_info.get("output_path")
 
+        if "acinetobacter" in species or "enterobacter" in species:
+            return None, print_species, mlst_species
+
         if poli_fasta and others_fasta:
             bacteria_dict: BacteriaDict = {
                 "species": species,
@@ -274,13 +277,12 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
             }
             return run_blast_and_check_mutations(bacteria_dict), \
                 print_species, mlst_species
-        return None, print_species, mlst_species
 
     return None, None, None
 
 
 def identify_bacteria_species(species_info: SpeciesDict):
-    species_data, _ = build_species_data(species_info)
+    species_data = build_species_data(species_info)
 
     blast_result, display_name, mlst = handle_species(species_info,
                                                       species_data)
