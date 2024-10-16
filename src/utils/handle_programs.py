@@ -71,4 +71,4 @@ def run_blastx(contig_file: str, blast_db_path: str, sample: str,
     except Exception as error:
         raise Exception(f"An error occurred: {error}")
 
-    return outfile
+    return outfile_path
