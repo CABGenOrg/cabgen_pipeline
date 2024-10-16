@@ -262,9 +262,6 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
         others_fasta = desired_species_data.get("others_fasta")
         output_path = species_info.get("output_path")
 
-        if "acinetobacter" in species or "enterobacter" in species:
-            return None, print_species, mlst_species
-
         if poli_fasta and others_fasta:
             bacteria_dict: BacteriaDict = {
                 "species": species,
@@ -277,6 +274,18 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
             }
             return run_blast_and_check_mutations(bacteria_dict), \
                 print_species, mlst_species
+    elif "acinetobacter" in species:
+        acineto = species_data.get("acinetobacter_species", {})
+        print_species = acineto.get("display_name")
+        mlst_species = acineto.get("mlst")
+
+        return None, print_species, mlst_species
+    elif "enterobacter" in species:
+        entero = species_data.get("enterobacter_species", {})
+        print_species = entero.get("display_name")
+        mlst_species = entero.get("mlst")
+
+        return None, print_species, mlst_species
 
     return None, None, None
 
