@@ -284,7 +284,7 @@ class CabgenPipeline:
             else:
                 self.display_name = f"{genus.title()} {species}"
 
-            if not self.mlst_species:
+            if not mlst_species:
                 self.mlst_species = "Não disponível"
             else:
                 self.mlst_species = mlst_species
