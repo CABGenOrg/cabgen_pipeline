@@ -261,6 +261,8 @@ class CabgenPipeline:
             blast_result, display_name, mlst_species = \
                 identify_bacteria_species(species_info)
 
+            fastani_display_name = ""
+
             _, fastani_species = build_species_data(species_info)
             if not blast_result and species in fastani_species.keys() \
                     or "enterobacter" in species \
@@ -275,10 +277,12 @@ class CabgenPipeline:
                 self.others_mutations_result = []
                 self.poli_mutations_result = []
 
-            if not display_name:
+            if not display_name and fastani_display_name:
                 self.display_name = fastani_display_name
-            else:
+            elif display_name and not fastani_display_name:
                 self.display_name = display_name
+            else:
+                self.display_name = f"{genus.title()} {species}"
 
             if not self.mlst_species:
                 self.mlst_species = "Não disponível"
