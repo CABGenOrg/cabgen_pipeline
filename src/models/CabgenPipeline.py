@@ -265,8 +265,8 @@ class CabgenPipeline:
             if not blast_result and species in fastani_species.keys() \
                     or "enterobacter" in species \
                     or "acinetobacter" in species:
-                display_name, mlst_species = \
-                    self._run_fastani(species_final_result)  # type: ignore
+                fastani_display_name = self._run_fastani(
+                    species_final_result)  # type: ignore
 
             if blast_result:
                 self.others_mutations_result = blast_result[0]
@@ -276,17 +276,21 @@ class CabgenPipeline:
                 self.poli_mutations_result = []
 
             if not display_name:
-                display_name = f"{species}"
-                mlst_species = "Não disponível"
+                self.display_name = fastani_display_name
+            else:
+                self.display_name = display_name
 
-            self.display_name = display_name
-            self.mlst_species = mlst_species
+            if not self.mlst_species:
+                self.mlst_species = "Não disponível"
+            else:
+                self.mlst_species = mlst_species
         except Exception as e:
             self.logger.error(f"Failed to process species.\n\n{e}")
             sys.exit(1)
 
     def _run_fastani(self, species_info: SpeciesDict):
         try:
+            print("Run FastANi")
             species = species_info.get("species")
             _, fastani_species = build_species_data(species_info)
 
@@ -298,7 +302,7 @@ class CabgenPipeline:
             else:
                 desired_species_data = fastani_species.get(fastani_group, {})
 
-            mlst_species = desired_species_data.get("mlst")
+            self.mlst_species = desired_species_data.get("mlst")
             fastani_list = desired_species_data.get("fastani_list")
             fastani_output = (f"{self.sample_directory}/{self.sample}_out-"
                               "fastANI")
@@ -313,7 +317,7 @@ class CabgenPipeline:
                 species_name = file.readline().strip().split(
                     "\t")[1].split("/")[-1].split(".")[0]
 
-            return species_name, mlst_species
+            return species_name
         except Exception as e:
             self.logger.error(f"Failed to run FastAni.\n\n{e}")
             sys.exit(1)
