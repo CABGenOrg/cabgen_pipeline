@@ -386,11 +386,11 @@ def handle_fastani_species(species_info: SpeciesDict,
     poli_outfile_suffix = path.join(species_info.get("output_path"),
                                     "blastPoli")
 
-    if "acinetobacter" in species:
+    if "acinetobacter" in species.lower():
         acinetobacter_info = species_data.get("acinetobacter_species", {})
         others_db_path = acinetobacter_info.get("others_fasta", "")
         poli_db_path = acinetobacter_info.get("poli_fasta", "")
-    elif "enterobacter" in species:
+    elif "enterobacter" in species.lower():
         enterobacter_info = species_data.get("enterobacter_species", {})
         others_db_path = enterobacter_info.get("others_fasta", "")
         poli_db_path = enterobacter_info.get("poli_fasta", "")
