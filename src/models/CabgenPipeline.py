@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from logging import Logger
 from shutil import rmtree
 from os import getenv, path, makedirs, listdir
-from src.types.BacteriaDict import BacteriaDict
 from src.models.MongoHandler import MongoHandler
 from src.types.SpeciesDict import SpeciesDict
 from src.utils.handle_programs import run_command_line
@@ -13,7 +12,7 @@ from src.utils.handle_folders import delete_folders_and_files
 from src.utils.handle_processing import count_kraken_words, \
     build_species_data, identify_bacteria_species, get_abricate_result, \
     process_resfinder, process_vfdb, process_plasmidfinder, format_time, \
-    run_blast_and_check_mutations
+    handle_fastani_species
 
 load_dotenv()
 uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
@@ -271,22 +270,8 @@ class CabgenPipeline:
                 fastani_display_name = self._run_fastani(
                     species_info)  # type: ignore
 
-                bacteria_dict: BacteriaDict = {
-                    "species": fastani_display_name,
-                    "assembly_file": self.assembly_path,
-                    "sample": str(self.sample),
-                    "others_db_path": self.outhers_db,
-                    "poli_db_path": self.polimyxin_db,
-                    "others_outfile_suffix": path.join(self.sample_directory,
-                                                       "blastOthers"),
-                    "poli_outfile_suffix": path.join(self.sample_directory,
-                                                     "blastPoli")
-                }
-                if fastani_display_name == \
-                        "Enterobacter_cloacae_subsp_cloacae":
-                    blast_result = run_blast_and_check_mutations(bacteria_dict)
-                elif fastani_display_name == "Acinetobacter_baumannii":
-                    blast_result = run_blast_and_check_mutations(bacteria_dict)
+                blast_result = handle_fastani_species(
+                    species_info, fastani_display_name)
 
             if blast_result:
                 self.others_mutations_result = blast_result[0]

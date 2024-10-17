@@ -371,3 +371,40 @@ def format_time(seconds: float) -> str:
     minutes, seconds = divmod(rem, 60)
 
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+
+
+def handle_fastani_species(species_info: SpeciesDict,
+                           fastani_species: str) -> Union[Tuple[List[str],
+                                                          List[str]], None]:
+    species_data = build_species_data(species_info)
+
+    species = fastani_species
+    assembly_file = species_info.get("assembly")
+    sample = str(species_info.get("sample"))
+    others_outfile_suffix = path.join(species_info.get("output_path"),
+                                      "blastOthers")
+    poli_outfile_suffix = path.join(species_info.get("output_path"),
+                                    "blastPoli")
+
+    if "acinetobacter" in species:
+        acinetobacter_info = species_data.get("acinetobacter_species", {})
+        others_db_path = acinetobacter_info.get("others_fasta", "")
+        poli_db_path = acinetobacter_info.get("poli_fasta", "")
+    elif "enterobacter" in species:
+        enterobacter_info = species_data.get("enterobacter_species", {})
+        others_db_path = enterobacter_info.get("others_fasta", "")
+        poli_db_path = enterobacter_info.get("poli_fasta", "")
+    else:
+        return None
+
+    bacteria_dict: BacteriaDict = {
+        "species": species,
+        "assembly_file": assembly_file,
+        "sample": sample,
+        "others_db_path": others_db_path,
+        "poli_db_path": poli_db_path,
+        "others_outfile_suffix": others_outfile_suffix,
+        "poli_outfile_suffix": poli_outfile_suffix
+    }
+    blast_result = run_blast_and_check_mutations(bacteria_dict)
+    return blast_result
