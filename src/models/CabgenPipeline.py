@@ -272,7 +272,7 @@ class CabgenPipeline:
                     species_info)  # type: ignore
 
                 bacteria_dict: BacteriaDict = {
-                    "species": species,
+                    "species": fastani_display_name,
                     "assembly_file": self.assembly_path,
                     "sample": str(self.sample),
                     "others_db_path": self.outhers_db,
