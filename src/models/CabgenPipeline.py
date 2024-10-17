@@ -314,15 +314,15 @@ class CabgenPipeline:
         try:
             print("Run FastANi")
             species = species_info.get("species")
-            _, fastani_species = build_species_data(species_info)
+            species_data = build_species_data(species_info)
 
             fastani_group = "enterobacter_species" if "enterobacter" in \
                 species else "acinetobacter_species"
             if species == "klebsiellapneumoniae":
-                desired_species_data = fastani_species.get(
+                desired_species_data = species_data.get(
                     "klebsiellapneumoniae", {})
             else:
-                desired_species_data = fastani_species.get(fastani_group, {})
+                desired_species_data = species_data.get(fastani_group, {})
 
             self.mlst_species = desired_species_data.get("mlst")
             fastani_list = desired_species_data.get("fastani_list")
