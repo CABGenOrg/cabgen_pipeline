@@ -50,7 +50,8 @@ def process_task(task: dict, mode: str):
 
 def process_tasks_in_parallel(tasks: List[dict], mode: str):
     try:
-        with ProcessPoolExecutor(max_workers=4) as executor:
+        workers = getenv("WORKERS") or 2
+        with ProcessPoolExecutor(max_workers=int(workers)) as executor:
             futures = [executor.submit(process_task, task, mode)
                        for task in tasks]
             wait(futures)
