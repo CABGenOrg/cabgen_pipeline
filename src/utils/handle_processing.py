@@ -376,6 +376,7 @@ def format_time(seconds: float) -> str:
 def handle_fastani_species(species_info: SpeciesDict,
                            fastani_species: str) -> Union[Tuple[List[str],
                                                           List[str]], None]:
+
     species_data = build_species_data(species_info)
 
     species = fastani_species
@@ -386,14 +387,15 @@ def handle_fastani_species(species_info: SpeciesDict,
     poli_outfile_suffix = path.join(species_info.get("output_path"),
                                     "blastPoli")
 
-    if "acinetobacter" in species.lower():
-        acinetobacter_info = species_data.get("acinetobacter_species", {})
-        others_db_path = acinetobacter_info.get("others_fasta", "")
-        poli_db_path = acinetobacter_info.get("poli_fasta", "")
-    elif "enterobacter" in species.lower():
-        enterobacter_info = species_data.get("enterobacter_species", {})
-        others_db_path = enterobacter_info.get("others_fasta", "")
-        poli_db_path = enterobacter_info.get("poli_fasta", "")
+    fastani_species_dict = {"Acinetobacter_baumannii":
+                            species_data.get("acinetobacter_species", {}),
+                            "Enterobacter_cloacae_subsp_cloacae":
+                            species_data.get("enterobacter_species", {})}
+    species_dict = fastani_species_dict.get(fastani_species)
+
+    if species_dict:
+        others_db_path = species_dict.get("others_fasta", "")
+        poli_db_path = species_dict.get("poli_fasta", "")
     else:
         return None
 
