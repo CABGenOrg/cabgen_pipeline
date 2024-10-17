@@ -269,7 +269,7 @@ class CabgenPipeline:
                                      "acinetobacter" in species_final_result):
 
                 fastani_display_name = self._run_fastani(
-                    species_final_result)  # type: ignore
+                    species_info)  # type: ignore
 
                 bacteria_dict: BacteriaDict = {
                     "species": species,
