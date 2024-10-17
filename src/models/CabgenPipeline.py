@@ -312,7 +312,7 @@ class CabgenPipeline:
 
     def _run_fastani(self, species_info: SpeciesDict):
         try:
-            print("Run FastANi")
+            self.logger.info("Run FastANi")
             species = species_info.get("species")
             species_data = build_species_data(species_info)
 

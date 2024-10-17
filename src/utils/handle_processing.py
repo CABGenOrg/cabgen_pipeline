@@ -76,27 +76,30 @@ def run_blast_and_check_mutations(
         Tuple[List[str], List[str]]: A tuple of lists that contain the found
         mutations.
     """
-    species = bacteria_dict["species"]
-    assembly_file = bacteria_dict["assembly_file"]
-    sample = bacteria_dict["sample"]
-    others_db_path = bacteria_dict["others_db_path"]
-    poli_db_path = bacteria_dict["poli_db_path"]
-    others_outfile_suffix = bacteria_dict["others_outfile_suffix"]
-    poli_outfile_suffix = bacteria_dict["poli_outfile_suffix"]
+    try:
+        species = bacteria_dict["species"]
+        assembly_file = bacteria_dict["assembly_file"]
+        sample = bacteria_dict["sample"]
+        others_db_path = bacteria_dict["others_db_path"]
+        poli_db_path = bacteria_dict["poli_db_path"]
+        others_outfile_suffix = bacteria_dict["others_outfile_suffix"]
+        poli_outfile_suffix = bacteria_dict["poli_outfile_suffix"]
 
-    others_blast_result = run_blastx(
-        assembly_file, others_db_path, sample, others_outfile_suffix)
-    poli_blast_result = run_blastx(assembly_file, poli_db_path,
-                                   sample, poli_outfile_suffix)
+        others_blast_result = run_blastx(
+            assembly_file, others_db_path, sample, others_outfile_suffix)
+        poli_blast_result = run_blastx(assembly_file, poli_db_path,
+                                       sample, poli_outfile_suffix)
 
-    analysis = choose_analysis.get(species, None)
-    if not analysis:
-        raise Exception(f"Invalid species {species}!")
+        analysis = choose_analysis.get(species, None)
+        if not analysis:
+            raise Exception(f"Invalid species {species}!")
 
-    others_mutations_result, _ = analysis(others_blast_result)
-    _, poli_mutations_result = analysis(poli_blast_result)
+        others_mutations_result, _ = analysis(others_blast_result)
+        _, poli_mutations_result = analysis(poli_blast_result)
 
-    return others_mutations_result, poli_mutations_result
+        return others_mutations_result, poli_mutations_result
+    except Exception as e:
+        raise Exception(f"Failed to run blast and check mutations.\n\n{e}")
 
 
 def get_abricate_result(file_path: str) -> List[str]:
