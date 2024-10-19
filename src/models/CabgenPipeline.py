@@ -3,7 +3,7 @@ import sys
 from time import time
 from dotenv import load_dotenv
 from logging import Logger
-from shutil import rmtree
+from shutil import rmtree, copy
 from os import getenv, path, makedirs, listdir
 from src.models.MongoHandler import MongoHandler
 from src.types.SpeciesDict import SpeciesDict
@@ -16,6 +16,7 @@ from src.utils.handle_processing import count_kraken_words, \
 
 load_dotenv()
 uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
+fastqc_output_path = getenv("FASTQC_OUTPUT_PATH") or ""
 
 
 class CabgenPipeline:
@@ -538,6 +539,16 @@ class CabgenPipeline:
             self.logger.error(f"Failed to run coverage.\n\n{e}")
             sys.exit(1)
 
+    def _copy_assembly_file(self):
+        try:
+            source = self.assembly_path
+            dest = path.join(fastqc_output_path, f"{self.sample}.fasta")
+
+            copy(source, dest)
+        except Exception as e:
+            self.logger.error(f"Failed to copy assembly file.\n\n{e}")
+            sys.exit(1)
+
     def _run_only_fastqc(self):
         try:
             self._run_fastqc()
@@ -567,6 +578,7 @@ class CabgenPipeline:
             self._run_mlst()
             self._process_mlst()
             self._run_coverage()
+            self._copy_assembly_file()
 
             query = {"_id": self.sample}
             bson = {"$currentDate": {"ultimaActualizacao": True},
