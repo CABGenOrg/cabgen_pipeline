@@ -13,6 +13,7 @@ from src.utils.handle_processing import count_kraken_words, \
     build_species_data, identify_bacteria_species, get_abricate_result, \
     process_resfinder, process_vfdb, process_plasmidfinder, format_time, \
     handle_fastani_species
+from src.utils.send_email import send_email
 
 load_dotenv()
 uploaded_sequences_path = getenv("UPLOADED_SEQUENCES_PATH") or ""
@@ -20,9 +21,10 @@ fastqc_output_path = getenv("FASTQC_OUTPUT_PATH") or ""
 
 
 class CabgenPipeline:
-    def __init__(self, sample: int, read1: str, read2: str, output: str,
-                 logger: Logger):
+    def __init__(self, sample: int, recipient_email: str, read1: str,
+                 read2: str, output: str, logger: Logger):
         self.sample = int(sample)
+        self.recipient_email = recipient_email
         self.read1 = path.join(uploaded_sequences_path, read1)
         self.read2 = path.join(uploaded_sequences_path, read2)
         self.output = output
@@ -601,6 +603,10 @@ class CabgenPipeline:
 
     def run(self, only_fastqc=False, only_genomic=False, complete=False):
         try:
+            # Sending start email
+            subject = f"Análise {self.sample}"
+            send_email(self.recipient_email, subject, "analysisStart.template")
+
             start_time = time()
             # Starting the pipeline dependencies
             self._check_params()
@@ -618,6 +624,10 @@ class CabgenPipeline:
             else:
                 self.logger.error("Invalid pipeline choice!")
                 raise ValueError
+
+            # Sending finish email
+            send_email(self.recipient_email, subject,
+                       "analysisFinish.template")
 
             self.mongo_client.close()
             runtime = format_time(time() - start_time)

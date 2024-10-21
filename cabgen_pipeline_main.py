@@ -24,6 +24,7 @@ def process_task(task: dict, mode: str):
             raise ValueError("There is no log path.")
 
         sample = int(task.get("_id", 0))
+        recipient_email = task.get("email", "")
         read1 = task.get("arquivofastqr1", "")
         read2 = task.get("arquivofastqr2", "")
         output = path.join(output_path, f"output_{sample}")
@@ -32,7 +33,7 @@ def process_task(task: dict, mode: str):
         if not logger:
             print("Logger could not be started")
 
-        pipe = CabgenPipeline(sample, read1, read2,
+        pipe = CabgenPipeline(sample, recipient_email, read1, read2,
                               output, logger)  # type: ignore
 
         if mode == "fastqc":
