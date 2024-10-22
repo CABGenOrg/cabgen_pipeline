@@ -283,9 +283,9 @@ class CabgenPipeline:
                 self.others_mutations_result = []
                 self.poli_mutations_result = []
 
-            if not display_name and fastani_display_name:
+            if fastani_display_name:
                 self.display_name = fastani_display_name
-            elif display_name and not fastani_display_name:
+            elif display_name:
                 self.display_name = display_name
             else:
                 self.display_name = f"{genus.title()} {species}"
