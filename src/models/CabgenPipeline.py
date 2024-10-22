@@ -603,10 +603,6 @@ class CabgenPipeline:
 
     def run(self, only_fastqc=False, only_genomic=False, complete=False):
         try:
-            # Sending start email
-            subject = f"Análise {self.sample}"
-            send_email(self.recipient_email, subject, "analysisStart.template")
-
             start_time = time()
             # Starting the pipeline dependencies
             self._check_params()
@@ -626,6 +622,7 @@ class CabgenPipeline:
                 raise ValueError
 
             # Sending finish email
+            subject = f"Análise {self.sample}"
             send_email(self.recipient_email, subject,
                        "analysisFinish.template")
 
