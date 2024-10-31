@@ -485,12 +485,12 @@ class CabgenPipeline:
                     self.mongo_client.save(
                         "relatorios", query, {"mlst": result})
                     self.logger.info(f"Scheme used {scheme_mlst}")
-                elif st == "-":
+                elif st == "-" and scheme_mlst != "-":
                     result = "New ST"
                     self.mongo_client.save(
                         "relatorios", query, {"mlst": result})
                     self.logger.info(f"Scheme used {scheme_mlst}")
-                elif scheme_mlst == "-":
+                elif st == "-" and scheme_mlst == "-":
                     result = "Not available for this specie"
                     self.mongo_client.save(
                         "relatorios", query, {"mlst": result})
