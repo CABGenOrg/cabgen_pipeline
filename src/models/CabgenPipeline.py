@@ -278,7 +278,7 @@ class CabgenPipeline:
 
                 blast_result = handle_fastani_species(
                     species_info, fastani_display_name)
-            elif "klebsiella" in species_final_result:
+            elif "klebsiellapneumoniae" in species_final_result:
                 fastani_display_name = self._run_fastani(species_info)
 
             if blast_result:
