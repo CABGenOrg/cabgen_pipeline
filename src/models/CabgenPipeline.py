@@ -267,9 +267,12 @@ class CabgenPipeline:
 
             fastani_display_name = ""
 
-            if not blast_result and ("enterobacter" in species_final_result or
-                                     "acinetobacter" in species_final_result):
-
+            if not blast_result and (
+                ("enterobacter" in species_final_result or
+                 "acinetobacter" in species_final_result) and
+                "enterobacterales" not in species_final_result and
+                "enterobacteriaceae" not in species_final_result
+            ):
                 fastani_display_name = self._run_fastani(
                     species_info)  # type: ignore
 
