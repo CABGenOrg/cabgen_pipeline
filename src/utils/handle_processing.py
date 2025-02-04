@@ -279,16 +279,16 @@ def handle_species(species_info: SpeciesDict, species_data: dict) -> \
                 print_species, mlst_species
     elif "acinetobacter" in species:
         acineto = species_data.get("acinetobacter_species", {})
-        print_species = acineto.get("display_name")
+        #print_species = acineto.get("display_name") 
         mlst_species = acineto.get("mlst")
 
-        return None, print_species, mlst_species
+        return None, None, mlst_species
     elif "enterobacter" in species:
         entero = species_data.get("enterobacter_species", {})
-        print_species = entero.get("display_name")
+        #print_species = entero.get("display_name")
         mlst_species = entero.get("mlst")
 
-        return None, print_species, mlst_species
+        return None, None, mlst_species
 
     return None, None, None
 
