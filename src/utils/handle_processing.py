@@ -14,54 +14,6 @@ choose_analysis = {"pseudomonasaeruginosa": find_pseudo_mutations,
                    find_ecloacae_mutations,
                    "Acinetobacter_baumannii": find_acineto_mutations}
 
-resistance_pattern = re.compile(
-    r'(?P<carbapenemase>(blaKPC|blaNDM|blaVIM|blaIMP|blaSPM|blaOXA-23|'
-    r'blaOXA-24|blaOXA-25|blaOXA-26|blaOXA-27|blaOXA-48|blaOXA-58|'
-    r'blaOXA-72|blaOXA-98|blaOXA-116|blaOXA-117|blaOXA-160|blaOXA-175|'
-    r'blaOXA-176|blaOXA-253))|'
-    r'(?P<oxa_51_like>(blaOXA-51|blaOXA-64|blaOXA-65|blaOXA-66|blaOXA-69|'
-    r'blaOXA-90|blaOXA-125|blaOXA-259|blaOXA-343|blaOXA-407))|'
-    r'(?P<esbl>(blaTEM|blaSHV|blaADC|blaCTX-M|blaGES|blaOXA-(?!23|24|25|'
-    r'26|27|48|58|72|98|116|117|160|175|176|253|488|486)))|'
-    r'(?P<aminoglycosides_fluoroquinolones>(aac\(6\'\)-Ib-cr))|'
-    r'(?P<aminoglycosides>(aph|aac|rmt|aad))|'
-    r'(?P<chloramphenicol>(cat|cml|cmx|floR))|'
-    r'(?P<fluoroquinolones>(qnr|oqx))|'
-    r'(?P<sulfonamides>sul)|'
-    r'(?P<trimethoprim>dfrA)|'
-    r'(?P<tetracycline>tet)|'
-    r'(?P<erythromycin>ere)|'
-    r'(?P<lincosamides_macrolides_streptogramins>erm)|'
-    r'(?P<rifampicin>ARR)|'
-    r'(?P<macrolides>(mph|msr))|'
-    r'(?P<vancomycin>Van)|'
-    r'(?P<clindamycin>lsa)|'
-    r'(?P<polymyxin>mcr)',
-    re.I
-)
-
-resfinder_patterns = {
-    'carbapenemase': "(carbapenemase)",
-    'oxa_51_like': "(OXA-51-like carbapenemase)",
-    'esbl': "(ESBL)",
-    'aminoglycosides_fluoroquinolones': ("(resistance to aminoglycosides and "
-                                         "fluoroquinolones)"),
-    'aminoglycosides': "(resistance to aminoglycosides)",
-    'chloramphenicol': "(resistance to chloramphenicol)",
-    'fluoroquinolones': "(resistance to fluoroquinolones)",
-    'sulfonamides': "(resistance to sulfonamides)",
-    'trimethoprim': "(resistance to trimethoprim)",
-    'tetracycline': "(resistance to tetracycline)",
-    'erythromycin': "(resistance to erythromycin)",
-    'lincosamides_macrolides_streptogramins':
-        "(resistance to lincosamides, macrolides, and streptogramins)",
-    'rifampicin': "(resistance to rifampicin)",
-    'macrolides': "(resistance to macrolides)",
-    'vancomycin': "(resistance to vancomycin)",
-    'clindamycin': "(resistance to clindamycin)",
-    'polymyxin': "(resistance to polymyxin)"
-}
-
 
 def run_blast_and_check_mutations(
         bacteria_dict: BacteriaDict) -> Tuple[List[str], List[str]]:
@@ -305,6 +257,13 @@ def process_resfinder(abricate_result: List[str]) -> Tuple[List[str],
                                                            List[str]]:
     gene_results = []
     blast_out_results = []
+    ref_list = []
+
+    #open reference file add feed the list
+    with open("/cabgen/sequences_database/lista_ncbi_ReferenceGeneCatalog160725.txt") as f: #esse caminho precisa ser alterado de acordo com o servidor
+        for line in f: 
+            line = line.strip() 
+            ref_list.append(line.split("\t")) 
 
     for line in abricate_result:
         blast_lines = line.split("\t")
@@ -313,19 +272,26 @@ def process_resfinder(abricate_result: List[str]) -> Tuple[List[str],
         gene = blast_lines[5]
         cov_q = blast_lines[9]
         cov_db = blast_lines[6]
+    
+        fields = line.strip().split("\t") #novo
+        name_gene = fields[5].split("_") #novo
+
+        for ref_item in ref_list:
+            #print(f"{ref_item[1]}")
+            #get correpondence between the two lists
+            antibiotic = re.search(re.escape(name_gene[0]), ref_item[0], re.IGNORECASE)
+            #print gene and antibiotic reference
+            if antibiotic:
+                #print(f"{fields[5]} {ref_item[-17]}")
+                gene_results.append(f"{gene} (resistance to {ref_item[-17].lower()}) "
+                                    f"(allele confidence {id})")
+                break
+        else:
+            gene_results.append(f"{gene} (allele confidence {id})")
 
         blast_out = (f"{gene} (ID: {id} COV_Q: {cov_q} COV_DB: {cov_db})")
         blast_out_results.append(blast_out)
 
-        match = resistance_pattern.search(gene)
-        if match:
-            for group_name, resistance in resfinder_patterns.items():
-                if match.group(group_name):
-                    gene_results.append(f"{gene} {resistance} "
-                                        f"(allele confidence {id})")
-                    break
-        else:
-            gene_results.append(f"{gene} (allele confidence {id})")
     return gene_results, blast_out_results
 
 
