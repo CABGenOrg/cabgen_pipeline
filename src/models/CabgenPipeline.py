@@ -210,9 +210,9 @@ class CabgenPipeline:
         try:
             self.logger.info("Run Kraken2")
             kraken_line = (f"{self.kraken2} --db {self.kraken_db} "
-                           f"--use-names --paired {self.read1} {self.read2} "
-                           f"--output {self.sample_directory}/out_kraken "
-                           f"--threads {self.threads}")
+                           f"--use-names --output {self.sample_directory}"
+                           f"/out_kraken --threads {self.threads} "
+                           f"{self.assembly_path}")
             run_command_line(kraken_line)
         except Exception as e:
             self.logger.error(f"Failed to run kraken2.\n\n{e}")
